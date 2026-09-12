@@ -131,12 +131,12 @@ export function createTableHtml(
   const rCount = Math.max(1, Math.min(rows, 16));
   const cCount = Math.max(1, Math.min(cols, 10));
 
-  let html = `<table style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 1.5px solid #94a3b8; font-size: 0.95em;">`;
+  let html = `<table style="width: 100%; max-width: 100%; table-layout: fixed; border-collapse: collapse; margin: 12px 0; border: 1px solid #94a3b8; font-size: 0.88em; word-break: break-word;">`;
 
   if (withHeader) {
     html += `<thead><tr style="background-color: #f1f5f9;">`;
     for (let c = 0; c < cCount; c++) {
-      html += `<th style="border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; font-weight: 700; color: ${accentColor}; border-bottom: 2px solid ${accentColor};">Column ${c + 1}</th>`;
+      html += `<th style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left; font-weight: 700; color: ${accentColor}; border-bottom: 2px solid ${accentColor}; word-break: break-word;">Col ${c + 1}</th>`;
     }
     html += `</tr></thead>`;
   }
@@ -147,7 +147,7 @@ export function createTableHtml(
     const bg = r % 2 === 1 ? 'background-color: #f8fafc;' : 'background-color: #ffffff;';
     html += `<tr style="${bg}">`;
     for (let c = 0; c < cCount; c++) {
-      html += `<td style="border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; color: #334155;">Data</td>`;
+      html += `<td style="border: 1px solid #cbd5e1; padding: 5px 8px; text-align: left; color: #334155; word-break: break-word;">-</td>`;
     }
     html += `</tr>`;
   }
@@ -346,16 +346,18 @@ export function applyTableStyle(
   const { theme = 'modern', accentColor = '#1e3a8a', padding = 'normal', fullWidth = true } = options;
 
   table.style.width = fullWidth ? '100%' : '85%';
+  table.style.maxWidth = '100%';
+  table.style.tableLayout = 'fixed';
   if (!fullWidth) {
     table.style.marginLeft = 'auto';
     table.style.marginRight = 'auto';
   }
   table.style.borderCollapse = 'collapse';
-  table.style.margin = '16px 0';
+  table.style.margin = '12px 0';
 
-  let padStr = '8px 12px';
-  if (padding === 'compact') padStr = '5px 8px';
-  if (padding === 'relaxed') padStr = '12px 16px';
+  let padStr = '5px 8px';
+  if (padding === 'compact') padStr = '3px 5px';
+  if (padding === 'relaxed') padStr = '8px 12px';
 
   if (theme === 'bordered') {
     table.style.border = '2px solid #64748b';

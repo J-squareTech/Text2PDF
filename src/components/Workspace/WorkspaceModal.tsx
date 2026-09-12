@@ -60,17 +60,17 @@ export const WorkspaceModal: React.FC<WorkspaceModalProps> = ({
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150">
+      <div className="bg-white border-t sm:border border-slate-200 rounded-t-2xl sm:rounded-xl shadow-2xl w-full max-w-4xl h-[92vh] sm:h-[85vh] flex flex-col overflow-hidden">
         {/* Modal Top Bar */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70 shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shrink-0">
               <FolderIcon className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-800">Document Workspace</h2>
-              <p className="text-xs text-slate-500">Organize, search, and manage your cloud documents</p>
+              <h2 className="text-sm sm:text-base font-bold text-slate-800">My Documents</h2>
+              <p className="text-[11px] text-slate-500 hidden xs:block">Organize, search, and manage your documents</p>
             </div>
           </div>
 
@@ -81,24 +81,84 @@ export const WorkspaceModal: React.FC<WorkspaceModalProps> = ({
                 onCreateBlankDocument();
                 onClose();
               }}
-              className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-semibold shadow-xs transition-colors"
+              className="flex items-center space-x-1 px-2.5 sm:px-3 py-1.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>New Document</span>
+              <span>New Doc</span>
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
+        {/* Mobile Horizontal Filters Bar (< sm screens) */}
+        <div className="sm:hidden px-3 py-2 border-b border-slate-200 bg-slate-50/50 space-y-2 shrink-0">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search documents..."
+              className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex items-center space-x-1.5 overflow-x-auto no-scrollbar py-0.5">
+            <button
+              onClick={() => {
+                setSelectedFolderId(null);
+                setOnlyFavorites(false);
+              }}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium shrink-0 transition-colors ${
+                !selectedFolderId && !onlyFavorites
+                  ? 'bg-blue-600 text-white font-semibold'
+                  : 'bg-white border border-slate-200 text-slate-700'
+              }`}
+            >
+              All ({documents.length})
+            </button>
+            <button
+              onClick={() => {
+                setSelectedFolderId(null);
+                setOnlyFavorites(true);
+              }}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium shrink-0 transition-colors flex items-center space-x-1 ${
+                onlyFavorites
+                  ? 'bg-amber-500 text-white font-semibold'
+                  : 'bg-white border border-slate-200 text-slate-700'
+              }`}
+            >
+              <Star className="w-3 h-3 fill-current" />
+              <span>Favorites</span>
+            </button>
+            {folders.map((folder) => (
+              <button
+                key={folder.id}
+                onClick={() => {
+                  setSelectedFolderId(folder.id);
+                  setOnlyFavorites(false);
+                }}
+                className={`px-2.5 py-1 rounded-full text-xs font-medium shrink-0 transition-colors flex items-center space-x-1 ${
+                  selectedFolderId === folder.id
+                    ? 'bg-blue-600 text-white font-semibold'
+                    : 'bg-white border border-slate-200 text-slate-700'
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: folder.color }} />
+                <span>{folder.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Modal Content: Left Folders + Right Documents List */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Left Sidebar: Folders & Filters */}
-          <div className="w-56 bg-slate-50/80 border-r border-slate-200 p-3 space-y-4 text-xs select-none">
+          {/* Left Sidebar: Folders & Filters (Tablet/Desktop) */}
+          <div className="hidden sm:block w-56 bg-slate-50/80 border-r border-slate-200 p-3 space-y-4 text-xs select-none shrink-0">
             {/* Search Input */}
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
@@ -188,15 +248,15 @@ export const WorkspaceModal: React.FC<WorkspaceModalProps> = ({
           </div>
 
           {/* Right Main: Document Grid */}
-          <div className="flex-1 overflow-y-auto p-6 bg-slate-50/30">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-6 bg-slate-50/30">
             {filteredDocs.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 space-y-2">
+              <div className="h-full flex flex-col items-center justify-center text-center text-slate-400 space-y-2 p-4">
                 <FileText className="w-10 h-10 stroke-1 text-slate-300" />
                 <p className="text-sm font-medium">No documents found</p>
                 <p className="text-xs text-slate-400">Try adjusting your search query or folder filter</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {filteredDocs.map((doc) => {
                   const isCurrent = doc.id === activeDocId;
                   const wordCount = doc.content.trim() ? doc.content.trim().split(/\s+/).length : 0;

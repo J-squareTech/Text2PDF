@@ -6,10 +6,11 @@
   }
 }
 
-/* Beautiful Rich Document Typography Styles */
-.document-canvas {
+:root {
   --doc-accent: #1e3a8a;
 }
+
+/* Beautiful Rich Document Typography Styles */
 
 .document-canvas h1 {
   font-size: 1.85rem;
@@ -68,14 +69,17 @@
 
 .document-canvas table {
   width: 100% !important;
+  max-width: 100% !important;
+  table-layout: fixed !important;
   border-collapse: collapse !important;
-  margin: 1.25rem 0 !important;
-  font-size: 0.95em;
+  margin: 0.85rem 0 !important;
+  font-size: 0.88em;
   background-color: #ffffff;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  border: 1.5px solid #94a3b8 !important;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 4px;
   display: table !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
 }
 
 .document-canvas thead {
@@ -93,10 +97,13 @@
 .document-canvas th,
 .document-canvas td {
   border: 1px solid #cbd5e1 !important;
-  padding: 0.65rem 0.85rem !important;
+  padding: 0.4rem 0.55rem !important;
   text-align: left;
   vertical-align: top;
   display: table-cell !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.35;
 }
 
 .document-canvas th {

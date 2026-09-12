@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
+import { Eye } from 'lucide-react';
 import { DocumentModel } from '../../types/document';
 import { paginateContent } from '../../utils/pagination';
 import { saveEditorSelection } from '../../utils/editorUtils';
@@ -22,12 +23,14 @@ interface WordEditorProps {
   onChangeContent: (content: string) => void;
   editorRef: React.RefObject<HTMLDivElement | null>;
   onInsertPageBreak?: () => void;
+  onOpenPreview?: () => void;
 }
 
 export const WordEditor: React.FC<WordEditorProps> = ({
   doc,
   onChangeContent,
   editorRef,
+  onOpenPreview,
 }) => {
   const pagination = paginateContent(doc.content, doc.pageSetup);
   const lastLoadedDocIdRef = useRef<string | null>(null);
@@ -211,7 +214,7 @@ export const WordEditor: React.FC<WordEditorProps> = ({
       )}
 
       {/* Scrollable Document Canvas */}
-      <div className="flex-1 overflow-y-auto p-2 sm:p-6 lg:p-8 flex justify-center">
+      <div className="flex-1 overflow-y-auto bg-slate-100/70 p-2 sm:p-6 lg:p-8 flex justify-center">
         {/* Document Paper Sheet */}
         <div
           className={`w-full max-w-3xl bg-white shadow-md rounded-xs border border-slate-300/80 min-h-[92vh] flex flex-col transition-all relative ${fontStyle}`}
@@ -237,8 +240,11 @@ export const WordEditor: React.FC<WordEditorProps> = ({
             </span>
           </div>
 
-          {/* Main Visual WYSIWYG Writing Area with Generous Bottom Space */}
-          <div className="flex-1 px-5 sm:px-12 pt-6 pb-40 document-canvas overflow-x-auto">
+          {/* Main Visual WYSIWYG Writing Area */}
+          <div
+            className="flex-1 px-5 sm:px-12 pt-6 pb-20 document-canvas overflow-x-auto"
+            style={{ '--doc-accent': accentHex } as React.CSSProperties}
+          >
             <div
               ref={editorRef}
               id="wysiwyg-document-editor"
@@ -252,7 +258,7 @@ export const WordEditor: React.FC<WordEditorProps> = ({
               onMouseUp={handleSelectionTracking}
               onTouchEnd={handleSelectionTracking}
               onSelect={handleSelectionTracking}
-              className="w-full min-h-[750px] pb-24 focus:outline-none text-slate-800"
+              className="w-full min-h-[750px] focus:outline-none text-slate-800"
               spellCheck={true}
             />
           </div>
@@ -279,12 +285,43 @@ export const WordEditor: React.FC<WordEditorProps> = ({
           <span>{pagination.wordCount} words</span>
           <span className="text-slate-300">•</span>
           <span>{pagination.charCount} chars</span>
+
+          {onOpenPreview && (
+            <>
+              <span className="text-slate-300">•</span>
+              <button
+                id="btn-statusbar-preview"
+                onClick={onOpenPreview}
+                className="flex items-center space-x-1 px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded border border-blue-200 transition-colors cursor-pointer"
+                title="View Live Paginated PDF Preview"
+              >
+                <Eye className="w-3.5 h-3.5 text-blue-600" />
+                <span>Live Preview</span>
+              </button>
+            </>
+          )}
         </div>
 
         <div className="hidden sm:flex items-center space-x-2 text-[11px] text-slate-400">
           <span>Shortcuts: <strong>Ctrl+B</strong> (Bold) • <strong>Ctrl+Enter</strong> (Page Break)</span>
         </div>
       </div>
+
+      {/* Floating Quick Preview Trigger for Mobile / Small Screens */}
+      {onOpenPreview && (
+        <button
+          id="btn-floating-mobile-preview"
+          onClick={onOpenPreview}
+          className="md:hidden fixed bottom-12 right-4 z-30 flex items-center space-x-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-full shadow-lg border border-white/20 active:scale-95 transition-all cursor-pointer"
+          title="Open Live PDF Preview"
+        >
+          <Eye className="w-4 h-4" />
+          <span>Preview PDF</span>
+          <span className="bg-blue-800/80 text-blue-100 text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold">
+            {pagination.totalPages}p
+          </span>
+        </button>
+      )}
     </div>
   );
 };

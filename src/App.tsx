@@ -45,12 +45,7 @@ export default function App() {
   const currentDoc = documents.find((d) => d.id === activeDocId) || documents[0];
 
   // View mode: 'editor' (Word write mode), 'preview' (compact paginated PDF preview), or 'split' (side-by-side)
-  const [viewMode, setViewMode] = useState<'editor' | 'preview' | 'split'>(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-      return 'editor';
-    }
-    return 'split';
-  });
+  const [viewMode, setViewMode] = useState<'editor' | 'preview' | 'split'>('split');
 
   // Active preview page index (0-indexed: 0 is Page 1, 1 is Page 2, etc.)
   const [currentPageIndex, setCurrentPageIndex] = useState<number>(0);
@@ -301,13 +296,18 @@ export default function App() {
   };
 
   const handleApplyTemplateToCurrent = (template: DocumentTemplate) => {
-    if (editorDivRef.current) {
-      editorDivRef.current.innerHTML = template.content;
+    if (viewMode === 'preview') {
+      setViewMode('split');
     }
     handleUpdateContent(template.content);
     if (template.defaultSettings) {
       handleUpdatePageSetup(template.defaultSettings);
     }
+    setTimeout(() => {
+      if (editorDivRef.current) {
+        editorDivRef.current.innerHTML = template.content;
+      }
+    }, 20);
   };
 
   const handleDuplicateDocument = (doc: DocumentModel) => {
@@ -378,12 +378,12 @@ export default function App() {
       )}
 
       {/* 3. Main Workspace: Word Editor and/or Swappable Full-Sized PDF Preview */}
-      <main className="flex-1 flex overflow-hidden relative">
+      <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative z-10">
         {/* LEFT / MAIN: Word Document Editor */}
         {(viewMode === 'editor' || viewMode === 'split') && (
           <div
             className={`flex flex-col h-full overflow-hidden ${
-              viewMode === 'split' ? 'w-full lg:w-1/2 border-r border-slate-300' : 'w-full'
+              viewMode === 'split' ? 'w-full md:w-1/2 border-b md:border-b-0 md:border-r border-slate-300' : 'w-full'
             }`}
           >
             <WordEditor
@@ -391,6 +391,7 @@ export default function App() {
               onChangeContent={handleUpdateContent}
               editorRef={editorDivRef}
               onInsertPageBreak={handleInsertPageBreak}
+              onOpenPreview={() => setViewMode(window.innerWidth < 768 ? 'preview' : 'split')}
             />
           </div>
         )}
@@ -399,7 +400,7 @@ export default function App() {
         {(viewMode === 'preview' || viewMode === 'split') && (
           <div
             className={`flex flex-col h-full overflow-hidden ${
-              viewMode === 'split' ? 'hidden lg:flex lg:w-1/2' : 'w-full'
+              viewMode === 'split' ? 'w-full md:w-1/2' : 'w-full'
             }`}
           >
             <CompactPagePreview
@@ -407,6 +408,9 @@ export default function App() {
               currentPageIndex={currentPageIndex}
               onSelectPage={setCurrentPageIndex}
               isMobile={viewMode === 'preview'}
+              onClosePreview={() => setViewMode('editor')}
+              isSplit={viewMode === 'split'}
+              onToggleFullscreenPreview={() => setViewMode(viewMode === 'split' ? 'preview' : 'split')}
             />
           </div>
         )}

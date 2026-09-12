@@ -10,12 +10,20 @@ interface PageSettingsModalProps {
 }
 
 const ACCENT_COLORS = [
+  { name: 'Pure Black', hex: '#000000' },
+  { name: 'Pure White', hex: '#ffffff' },
+  { name: 'Executive Slate', hex: '#1e293b' },
   { name: 'Classic Navy', hex: '#1e3a8a' },
+  { name: 'Royal Blue', hex: '#2563eb' },
+  { name: 'Sky Cyan', hex: '#0284c7' },
   { name: 'Emerald Teal', hex: '#0f766e' },
-  { name: 'Executive Slate', hex: '#0f172a' },
-  { name: 'Royal Indigo', hex: '#4338ca' },
-  { name: 'Crimson Red', hex: '#991b1b' },
   { name: 'Forest Pine', hex: '#166534' },
+  { name: 'Amber Gold', hex: '#d97706' },
+  { name: 'Burnt Orange', hex: '#ea580c' },
+  { name: 'Crimson Red', hex: '#dc2626' },
+  { name: 'Rose Ruby', hex: '#e11d48' },
+  { name: 'Royal Purple', hex: '#7c3aed' },
+  { name: 'Deep Indigo', hex: '#4338ca' },
 ];
 
 export const PageSettingsModal: React.FC<PageSettingsModalProps> = ({
@@ -27,15 +35,15 @@ export const PageSettingsModal: React.FC<PageSettingsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150">
+      <div className="bg-white border-t sm:border border-slate-200 rounded-t-2xl sm:rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
         {/* Modal Header */}
-        <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <div className="px-5 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center space-x-2">
-            <Sliders className="w-5 h-5 text-blue-600" />
+            <Sliders className="w-5 h-5 text-blue-600 shrink-0" />
             <div>
-              <h2 className="text-base font-bold text-slate-800">Page Setup & Layout</h2>
-              <p className="text-xs text-slate-500">Configure paper dimensions, margins, and running headers</p>
+              <h2 className="text-sm sm:text-base font-bold text-slate-800">Page Setup & Layout</h2>
+              <p className="text-[11px] text-slate-500 hidden xs:block">Configure dimensions, margins, and running headers</p>
             </div>
           </div>
           <button
@@ -163,17 +171,21 @@ export const PageSettingsModal: React.FC<PageSettingsModalProps> = ({
           {/* Primary Accent Color */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">Document Accent Theme</label>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-2">
               {ACCENT_COLORS.map((c) => (
                 <button
                   key={c.hex}
                   type="button"
                   onClick={() => onUpdatePageSetup({ accentColor: c.hex })}
                   style={{ backgroundColor: c.hex }}
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-white transition-transform hover:scale-110 shadow-xs"
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-110 shadow-2xs cursor-pointer ${
+                    c.hex === '#ffffff' ? 'border-2 border-slate-300 text-slate-800' : 'text-white border border-black/10'
+                  }`}
                   title={c.name}
                 >
-                  {pageSetup.accentColor === c.hex && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                  {pageSetup.accentColor === c.hex && (
+                    <Check className={`w-3.5 h-3.5 stroke-[3] ${c.hex === '#ffffff' ? 'text-slate-900' : 'text-white'}`} />
+                  )}
                 </button>
               ))}
             </div>

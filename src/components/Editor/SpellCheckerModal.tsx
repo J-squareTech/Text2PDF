@@ -32,24 +32,24 @@ export const SpellCheckerModal: React.FC<SpellCheckerModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+      <div className="bg-white rounded-t-2xl sm:rounded-xl shadow-2xl border-t sm:border border-slate-200 w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in duration-150">
         {/* Header */}
-        <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div className="px-4 sm:px-5 py-3.5 sm:py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shadow-xs">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center shadow-xs shrink-0">
               <SpellCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800 text-base flex items-center space-x-2">
-                <span>Auto Spell & Grammar Checker</span>
+              <h3 className="font-bold text-slate-800 text-sm sm:text-base flex items-center space-x-2">
+                <span>Spell & Grammar</span>
                 {issues.length > 0 && (
                   <span className="text-xs bg-amber-100 text-amber-800 font-semibold px-2 py-0.5 rounded-full border border-amber-200">
-                    {issues.length} {issues.length === 1 ? 'Issue' : 'Issues'}
+                    {issues.length}
                   </span>
                 )}
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-[11px] text-slate-500 hidden xs:block">
                 Detect and fix typos, misspellings, and duplicate words
               </p>
             </div>

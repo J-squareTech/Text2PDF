@@ -42,3 +42,28 @@ export function restoreEditorSelection(fallbackElement?: HTMLElement | null): bo
 
   return false;
 }
+
+/**
+ * Apply inline font size in points to selected text, or return false if no text selected
+ */
+export function applyInlineFontSize(sizePt: number, fallbackElement?: HTMLElement | null): boolean {
+  restoreEditorSelection(fallbackElement);
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+    const range = sel.getRangeAt(0);
+    const span = document.createElement('span');
+    span.style.fontSize = `${sizePt}pt`;
+    try {
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+      range.selectNodeContents(span);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      saveEditorSelection();
+      return true;
+    } catch {
+      return document.execCommand('fontSize', false, '3');
+    }
+  }
+  return false;
+}

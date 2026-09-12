@@ -49,17 +49,17 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-3 sm:p-5 animate-in fade-in duration-150 select-none">
-      <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-5xl h-[88vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-xs p-0 sm:p-5 animate-in fade-in duration-150 select-none">
+      <div className="bg-white border-t sm:border border-slate-200 rounded-t-2xl sm:rounded-xl shadow-2xl w-full max-w-5xl h-[92vh] sm:h-[88vh] flex flex-col overflow-hidden">
         {/* Modal Top Bar */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 shrink-0">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70 shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-xs">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-xs shrink-0">
               <LayoutTemplate className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-800">Document Template Library</h2>
-              <p className="text-xs text-slate-500">Pick any professional template to load into your document</p>
+              <h2 className="text-sm sm:text-base font-bold text-slate-800">Template Library</h2>
+              <p className="text-[11px] text-slate-500 hidden xs:block">Pick a professional template to load into your document</p>
             </div>
           </div>
           <button
@@ -71,12 +71,12 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
         </div>
 
         {/* Category Pill Filters */}
-        <div className="px-6 py-2.5 border-b border-slate-200 bg-slate-50/80 flex items-center space-x-2 overflow-x-auto text-xs shrink-0">
+        <div className="px-4 sm:px-6 py-2 border-b border-slate-200 bg-slate-50/80 flex items-center space-x-1.5 overflow-x-auto text-xs shrink-0 no-scrollbar">
           {categories.map((c) => (
             <button
               key={c.id}
               onClick={() => setSelectedCategory(c.id)}
-              className={`px-3 py-1 rounded-full whitespace-nowrap transition-all ${
+              className={`px-3 py-1 rounded-full whitespace-nowrap text-xs transition-all ${
                 selectedCategory === c.id
                   ? 'bg-indigo-600 text-white font-semibold shadow-xs'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -90,7 +90,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
         {/* Main: Templates Grid + Live Preview Pane */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* Left Grid */}
-          <div className="w-full md:w-5/12 overflow-y-auto p-4 space-y-3 border-b md:border-b-0 md:border-r border-slate-200 bg-slate-50/30">
+          <div className="w-full md:w-5/12 overflow-y-auto p-3 sm:p-4 space-y-2.5 border-b md:border-b-0 md:border-r border-slate-200 bg-slate-50/30">
             {filtered.map((tmpl) => {
               const isSelected = previewTemplate.id === tmpl.id;
               return (

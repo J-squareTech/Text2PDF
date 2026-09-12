@@ -85,26 +85,26 @@ export const TablePropertiesModal: React.FC<TablePropertiesModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150 select-none">
-      <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in duration-150 select-none">
+      <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header */}
-        <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+        <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-              <TableIcon className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white shrink-0">
+              <TableIcon className="w-3.5 h-3.5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-slate-800">Table Editor & Design</h3>
-              <p className="text-[11px] text-slate-500">
-                {tableContext.totalRows} rows × {tableContext.totalCols} columns (Cursor at Row {tableContext.rowIndex + 1}, Col {tableContext.colIndex + 1})
+              <h3 className="font-bold text-xs sm:text-sm text-slate-800">Table Editor & Design</h3>
+              <p className="text-[10px] sm:text-[11px] text-slate-500">
+                {tableContext.totalRows} rows × {tableContext.totalCols} cols (Row {tableContext.rowIndex + 1}, Col {tableContext.colIndex + 1})
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+            className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
