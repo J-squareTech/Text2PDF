@@ -10,6 +10,7 @@ import {
   Eye,
   Layers,
   FileSpreadsheet,
+  Loader2,
 } from 'lucide-react';
 import { DocumentModel } from '../../types/document';
 import { paginateContent } from '../../utils/pagination';
@@ -32,6 +33,18 @@ export const CompactPagePreview: React.FC<CompactPagePreviewProps> = ({
   const [zoomScale, setZoomScale] = useState<number>(1.0);
   // Display mode: 'continuous' (all pages stacked) or 'paged' (single page swapper)
   const [displayLayout, setDisplayLayout] = useState<'continuous' | 'paged'>('continuous');
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    try {
+      setIsExporting(true);
+      await exportToDirectPdf(doc);
+    } catch (err) {
+      console.error('Error exporting PDF:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Compute paginated pages whenever doc content or setup changes
   const pagination = paginateContent(doc.content, doc.pageSetup);
@@ -239,12 +252,17 @@ export const CompactPagePreview: React.FC<CompactPagePreviewProps> = ({
 
           <button
             id="btn-preview-download-pdf"
-            onClick={() => exportToDirectPdf(doc)}
-            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded flex items-center space-x-1 shadow-xs transition-colors"
+            disabled={isExporting}
+            onClick={handleDownloadPdf}
+            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded flex items-center space-x-1 shadow-xs transition-colors disabled:opacity-75"
             title="Download PDF File"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>PDF</span>
+            {isExporting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5" />
+            )}
+            <span>{isExporting ? 'Creating...' : 'PDF'}</span>
           </button>
 
           <button

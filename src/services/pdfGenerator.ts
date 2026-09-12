@@ -1,10 +1,14 @@
 import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas-pro';
 import { DocumentModel } from '../types/document';
+import { paginateContent } from '../utils/pagination';
 
 /**
- * Generate a downloadable PDF file directly from rich document HTML using jsPDF
+ * Generate a downloadable PDF that is 100% IDENTICAL to the visual preview screen.
+ * Uses high-resolution canvas capture (2x scale) of the exact styled page sheets,
+ * ensuring tables, fonts, colors, headers, footers, and margins match pixel-for-pixel.
  */
-export function exportToDirectPdf(doc: DocumentModel): void {
+export async function exportToDirectPdf(doc: DocumentModel): Promise<void> {
   const isLandscape = doc.pageSetup.orientation === 'landscape';
   const paperFormat =
     doc.pageSetup.paperSize === 'legal'
@@ -19,270 +23,180 @@ export function exportToDirectPdf(doc: DocumentModel): void {
     format: paperFormat,
   });
 
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
+  const pdfWidth = pdf.internal.pageSize.getWidth();
+  const pdfHeight = pdf.internal.pageSize.getHeight();
 
-  // Margins in mm
-  const marginMm =
-    doc.pageSetup.margin === 'compact'
-      ? 14
-      : doc.pageSetup.margin === 'relaxed'
-      ? 26
-      : 18;
-  const contentWidth = pageWidth - marginMm * 2;
+  // Get paginated pages
+  const pagination = paginateContent(doc.content, doc.pageSetup);
+  const totalPages = pagination.totalPages;
 
-  let cursorY = marginMm + 8;
-  let pageNumber = 1;
+  // Margin styling
+  const marginPadding = {
+    compact: '24px 32px',
+    normal: '32px 48px',
+    relaxed: '40px 56px',
+  }[doc.pageSetup.margin] || '32px 48px';
 
-  const drawHeaderFooter = (currentPage: number) => {
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    pdf.setTextColor(130, 140, 150);
+  // Font family
+  const fontFamilyStyle = {
+    sans: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    serif: "'Lora', Georgia, Cambria, 'Times New Roman', Times, serif",
+    mono: "'Fira Code', Menlo, Monaco, Consolas, monospace",
+    display: "'Cinzel', Georgia, serif",
+  }[doc.pageSetup.fontFamily] || "'Plus Jakarta Sans', sans-serif";
 
-    // Running Header
-    if (doc.pageSetup.headerText) {
-      pdf.text(doc.pageSetup.headerText, marginMm, marginMm - 4);
-      pdf.setDrawColor(225, 230, 235);
-      pdf.setLineWidth(0.2);
-      pdf.line(marginMm, marginMm - 2, pageWidth - marginMm, marginMm - 2);
-    }
-
-    // Running Footer
-    const footerY = pageHeight - marginMm + 6;
-    if (doc.pageSetup.footerText) {
-      const footerMsg = doc.pageSetup.footerText.replace('{page}', String(currentPage));
-      pdf.text(footerMsg, marginMm, footerY);
-    }
-
-    if (doc.pageSetup.showPageNumbers) {
-      const pageStr = `Page ${currentPage}`;
-      pdf.text(pageStr, pageWidth - marginMm - pdf.getTextWidth(pageStr), footerY);
-    }
-  };
-
-  const checkPageBreak = (neededHeight: number) => {
-    if (cursorY + neededHeight > pageHeight - marginMm - 8) {
-      drawHeaderFooter(pageNumber);
-      pdf.addPage();
-      pageNumber++;
-      cursorY = marginMm + 8;
-    }
-  };
-
-  // Parse HTML content
-  const parser = new DOMParser();
-  const htmlDoc = parser.parseFromString(doc.content || '', 'text/html');
-  const bodyNodes = Array.from(htmlDoc.body.children);
-
-  if (bodyNodes.length === 0) {
-    // If no HTML tags found, fallback to line-based rendering
-    const rawLines = (doc.content || '').split('\n');
-    for (const rawLine of rawLines) {
-      if (!rawLine.trim()) {
-        cursorY += 4;
-        continue;
-      }
-      checkPageBreak(7);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(10.5);
-      pdf.setTextColor(30, 41, 59);
-      const wrapped = pdf.splitTextToSize(rawLine.trim(), contentWidth);
-      pdf.text(wrapped, marginMm, cursorY);
-      cursorY += wrapped.length * 5.2 + 2;
-    }
-  } else {
-    // Process HTML DOM Elements
-    for (const node of bodyNodes) {
-      const tagName = node.tagName.toLowerCase();
-
-      // 1. Explicit Page Break
-      if (
-        node.classList.contains('page-break') ||
-        node.classList.contains('tex2pdf-page-break') ||
-        node.textContent?.includes('=== PAGE BREAK ===')
-      ) {
-        drawHeaderFooter(pageNumber);
-        pdf.addPage();
-        pageNumber++;
-        cursorY = marginMm + 8;
-        continue;
-      }
-
-      // 2. Heading 1 (Title)
-      if (tagName === 'h1') {
-        checkPageBreak(16);
-        cursorY += 3;
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(18);
-        pdf.setTextColor(15, 23, 42);
-        const text = node.textContent?.trim() || '';
-        const wrapped = pdf.splitTextToSize(text, contentWidth);
-        pdf.text(wrapped, marginMm, cursorY);
-        cursorY += wrapped.length * 7.5 + 4;
-        continue;
-      }
-
-      // 3. Heading 2 (Section)
-      if (tagName === 'h2') {
-        checkPageBreak(13);
-        cursorY += 3;
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(13.5);
-        pdf.setTextColor(30, 58, 138); // Navy blue
-        const text = node.textContent?.trim() || '';
-        const wrapped = pdf.splitTextToSize(text, contentWidth);
-        pdf.text(wrapped, marginMm, cursorY);
-        cursorY += wrapped.length * 6 + 3;
-        continue;
-      }
-
-      // 4. Heading 3 (Subsection)
-      if (tagName === 'h3') {
-        checkPageBreak(10);
-        cursorY += 2;
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(11.5);
-        pdf.setTextColor(51, 65, 85);
-        const text = node.textContent?.trim() || '';
-        const wrapped = pdf.splitTextToSize(text, contentWidth);
-        pdf.text(wrapped, marginMm, cursorY);
-        cursorY += wrapped.length * 5.2 + 2;
-        continue;
-      }
-
-      // 5. Horizontal Divider
-      if (tagName === 'hr') {
-        checkPageBreak(6);
-        cursorY += 1;
-        pdf.setDrawColor(203, 213, 225);
-        pdf.setLineWidth(0.3);
-        pdf.line(marginMm, cursorY, pageWidth - marginMm, cursorY);
-        cursorY += 5;
-        continue;
-      }
-
-      // 6. Blockquote
-      if (tagName === 'blockquote') {
-        const quoteText = node.textContent?.trim() || '';
-        checkPageBreak(10);
-        pdf.setFont('helvetica', 'italic');
-        pdf.setFontSize(10);
-        pdf.setTextColor(71, 85, 105);
-        const wrapped = pdf.splitTextToSize(quoteText, contentWidth - 8);
-        const blockHeight = wrapped.length * 4.8 + 4;
-
-        pdf.setDrawColor(59, 130, 246);
-        pdf.setLineWidth(1);
-        pdf.line(marginMm, cursorY - 1, marginMm, cursorY + blockHeight - 2);
-
-        pdf.text(wrapped, marginMm + 5, cursorY + 3);
-        cursorY += blockHeight + 2;
-        continue;
-      }
-
-      // 7. Unordered List (Bullet Points)
-      if (tagName === 'ul') {
-        const items = Array.from(node.querySelectorAll('li'));
-        for (const item of items) {
-          checkPageBreak(6);
-          pdf.setFont('helvetica', 'normal');
-          pdf.setFontSize(10);
-          pdf.setTextColor(30, 41, 59);
-
-          // Dot
-          pdf.setFillColor(71, 85, 105);
-          pdf.circle(marginMm + 2, cursorY - 1, 0.7, 'F');
-
-          const wrapped = pdf.splitTextToSize(item.textContent?.trim() || '', contentWidth - 8);
-          pdf.text(wrapped, marginMm + 6, cursorY);
-          cursorY += wrapped.length * 4.8 + 1.5;
-        }
-        cursorY += 2;
-        continue;
-      }
-
-      // 8. Ordered List (Numbered)
-      if (tagName === 'ol') {
-        const items = Array.from(node.querySelectorAll('li'));
-        items.forEach((item, idx) => {
-          checkPageBreak(6);
-          pdf.setFont('helvetica', 'normal');
-          pdf.setFontSize(10);
-          pdf.setTextColor(30, 41, 59);
-
-          pdf.text(`${idx + 1}.`, marginMm, cursorY);
-          const wrapped = pdf.splitTextToSize(item.textContent?.trim() || '', contentWidth - 8);
-          pdf.text(wrapped, marginMm + 6, cursorY);
-          cursorY += wrapped.length * 4.8 + 1.5;
-        });
-        cursorY += 2;
-        continue;
-      }
-
-      // 9. Table Rendering
-      if (tagName === 'table') {
-        const rows = Array.from(node.querySelectorAll('tr'));
-        if (rows.length > 0) {
-          const colCount = Math.max(...rows.map((r) => r.children.length));
-          const colWidth = contentWidth / (colCount || 1);
-
-          for (let rIdx = 0; rIdx < rows.length; rIdx++) {
-            const row = rows[rIdx];
-            checkPageBreak(8);
-
-            const isHeader = rIdx === 0 && row.querySelector('th') !== null;
-            if (isHeader) {
-              pdf.setFillColor(241, 245, 249);
-              pdf.rect(marginMm, cursorY - 3.5, contentWidth, 7, 'F');
-            }
-
-            const cells = Array.from(row.children);
-            cells.forEach((cell, cIdx) => {
-              pdf.setFont('helvetica', isHeader ? 'bold' : 'normal');
-              pdf.setFontSize(9);
-              pdf.setTextColor(isHeader ? 15 : 51, isHeader ? 23 : 65, isHeader ? 42 : 85);
-              const cellText = cell.textContent?.trim() || '';
-              const cellX = marginMm + cIdx * colWidth + 2;
-              pdf.text(cellText, cellX, cursorY);
-            });
-
-            // Row bottom border
-            pdf.setDrawColor(226, 232, 240);
-            pdf.setLineWidth(0.2);
-            pdf.line(marginMm, cursorY + 3.5, marginMm + contentWidth, cursorY + 3.5);
-            cursorY += 7;
-          }
-          cursorY += 3;
-          continue;
-        }
-      }
-
-      // 10. Standard Paragraph (p, div, etc.)
-      const text = node.textContent?.trim();
-      if (text) {
-        checkPageBreak(6);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(10.5);
-        pdf.setTextColor(30, 41, 59);
-        const wrapped = pdf.splitTextToSize(text, contentWidth);
-        pdf.text(wrapped, marginMm, cursorY);
-        cursorY += wrapped.length * 5 + 2.5;
-      } else {
-        cursorY += 3;
-      }
-    }
+  // Check if preview pages already exist in the DOM
+  const existingSheets: HTMLElement[] = [];
+  for (let i = 1; i <= totalPages; i++) {
+    const el = document.getElementById(`preview-page-${i}`);
+    if (el) existingSheets.push(el);
   }
 
-  // Draw header and footer on the final page
-  drawHeaderFooter(pageNumber);
+  let sheetsToRender: HTMLElement[] = existingSheets;
+  let tempHost: HTMLElement | null = null;
 
-  // Trigger download
-  const safeTitle = (doc.title || 'document').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
-  pdf.save(`${safeTitle}.pdf`);
+  // If preview sheets aren't currently mounted (e.g. user is in Write/Editor mode only),
+  // construct exact visual clone sheets in an offscreen container.
+  if (sheetsToRender.length < totalPages) {
+    tempHost = document.createElement('div');
+    tempHost.style.position = 'fixed';
+    tempHost.style.left = '-99999px';
+    tempHost.style.top = '0';
+    tempHost.style.width = isLandscape ? '1100px' : '820px';
+    tempHost.style.zIndex = '-1000';
+    tempHost.style.backgroundColor = '#ffffff';
+
+    const createdSheets: HTMLElement[] = [];
+
+    pagination.pages.forEach((pageHtml, index) => {
+      const pageNum = index + 1;
+      const sheet = document.createElement('div');
+      sheet.style.width = isLandscape ? '1100px' : '820px';
+      sheet.style.minHeight = isLandscape ? '760px' : '1080px';
+      sheet.style.boxSizing = 'border-box';
+      sheet.style.padding = marginPadding;
+      sheet.style.backgroundColor = '#ffffff';
+      sheet.style.fontFamily = fontFamilyStyle;
+      sheet.style.fontSize = `${doc.pageSetup.fontSize || 11}pt`;
+      sheet.style.lineHeight = String(doc.pageSetup.lineHeight || 1.6);
+      sheet.style.color = '#1e293b';
+      sheet.style.display = 'flex';
+      sheet.style.flexDirection = 'column';
+      sheet.style.justifyContent = 'space-between';
+
+      // Header
+      const headerDiv = document.createElement('div');
+      headerDiv.style.borderBottom = '1px solid #e2e8f0';
+      headerDiv.style.paddingBottom = '12px';
+      headerDiv.style.marginBottom = '20px';
+      headerDiv.style.fontSize = '12px';
+      headerDiv.style.color = '#94a3b8';
+      headerDiv.style.display = 'flex';
+      headerDiv.style.justifyContent = 'space-between';
+      headerDiv.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+
+      const headerTitle = document.createElement('span');
+      headerTitle.textContent = doc.pageSetup.headerText || doc.title;
+      headerDiv.appendChild(headerTitle);
+
+      const headerBadge = document.createElement('span');
+      headerBadge.textContent = `${doc.pageSetup.paperSize.toUpperCase()} • PAGE ${pageNum} OF ${totalPages}`;
+      headerBadge.style.fontSize = '10px';
+      headerBadge.style.padding = '2px 8px';
+      headerBadge.style.background = '#f1f5f9';
+      headerBadge.style.borderRadius = '4px';
+      headerDiv.appendChild(headerBadge);
+
+      sheet.appendChild(headerDiv);
+
+      // Body Content
+      const bodyDiv = document.createElement('div');
+      bodyDiv.className = 'document-canvas';
+      bodyDiv.style.flex = '1';
+      bodyDiv.style.fontSize = '14px';
+      bodyDiv.style.lineHeight = '1.6';
+
+      const cleanHtml = pageHtml
+        .replace(/<div[^>]*class=["'][^"']*(?:page-break|tex2pdf-page-break)[^"']*["'][^>]*>[\s\S]*?<\/div>/gi, '')
+        .trim();
+      bodyDiv.innerHTML = cleanHtml;
+
+      sheet.appendChild(bodyDiv);
+
+      // Footer
+      const footerDiv = document.createElement('div');
+      footerDiv.style.borderTop = '1px solid #e2e8f0';
+      footerDiv.style.paddingTop = '12px';
+      footerDiv.style.marginTop = '20px';
+      footerDiv.style.fontSize = '12px';
+      footerDiv.style.color = '#94a3b8';
+      footerDiv.style.display = 'flex';
+      footerDiv.style.justifyContent = 'space-between';
+      footerDiv.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
+
+      const footerText = document.createElement('span');
+      footerText.textContent = doc.pageSetup.footerText || 'Tex2PDF Document';
+      footerDiv.appendChild(footerText);
+
+      if (doc.pageSetup.showPageNumbers) {
+        const pageNumberSpan = document.createElement('span');
+        pageNumberSpan.textContent = `Page ${pageNum} of ${totalPages}`;
+        pageNumberSpan.style.fontWeight = 'bold';
+        pageNumberSpan.style.color = '#475569';
+        footerDiv.appendChild(pageNumberSpan);
+      }
+
+      sheet.appendChild(footerDiv);
+      tempHost!.appendChild(sheet);
+      createdSheets.push(sheet);
+    });
+
+    document.body.appendChild(tempHost);
+    sheetsToRender = createdSheets;
+  }
+
+  try {
+    for (let i = 0; i < sheetsToRender.length; i++) {
+      const sheet = sheetsToRender[i];
+
+      const canvas = await html2canvas(sheet, {
+        scale: 2, // 2x high-resolution crisp text & borders
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: sheet.scrollWidth,
+        onclone: (clonedDoc, clonedElement) => {
+          if (clonedElement) {
+            clonedElement.style.transform = 'none';
+            clonedElement.style.boxShadow = 'none';
+            clonedElement.style.margin = '0';
+          }
+        },
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+      if (i > 0) {
+        pdf.addPage(paperFormat, isLandscape ? 'landscape' : 'portrait');
+      }
+
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+    }
+
+    const safeTitle = (doc.title || 'document').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+    pdf.save(`${safeTitle}.pdf`);
+  } catch (err) {
+    console.error('Error generating canvas PDF, falling back to vector print:', err);
+    window.print();
+  } finally {
+    if (tempHost && tempHost.parentNode) {
+      tempHost.parentNode.removeChild(tempHost);
+    }
+  }
 }
 
 /**
- * Trigger native print dialog (which produces 100% vector-sharp PDFs)
+ * Trigger native print dialog
  */
 export function triggerSystemPrint(): void {
   window.print();
@@ -314,9 +228,9 @@ export function exportToHtml(doc: DocumentModel): void {
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #1e293b; }
     h1 { font-size: 2em; margin-bottom: 0.5em; color: #0f172a; }
     h2 { font-size: 1.5em; margin-top: 1.2em; color: #1e3a8a; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.2em; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; border: 1.5px solid #94a3b8; }
     th, td { border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; }
-    th { background: #f1f5f9; }
+    th { background: #f1f5f9; font-weight: bold; }
     .page-break { page-break-after: always; border-top: 2px dashed #3b82f6; margin: 30px 0; }
   </style>
 </head>

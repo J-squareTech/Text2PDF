@@ -18,13 +18,16 @@ import {
   AlignRight,
   Highlighter,
   Palette,
+  Sparkles,
+  ChevronDown,
 } from 'lucide-react';
 import { FontFamily } from '../../types/document';
+import { createTableHtml } from '../../utils/tableUtils';
 
 interface WordToolbarProps {
   onFormatBlock: (tag: string) => void;
   onFormatInline: (command: string, value?: string) => void;
-  onInsertTable: () => void;
+  onInsertCustomTable: (tableHtml: string) => void;
   onInsertPageBreak: () => void;
   onInsertDivider: () => void;
   fontFamily: FontFamily;
@@ -33,12 +36,14 @@ interface WordToolbarProps {
   onChangeFontSize: (size: number) => void;
   onUndo: () => void;
   onRedo: () => void;
+  onOpenSpellChecker: () => void;
+  typoCount: number;
 }
 
 export const WordToolbar: React.FC<WordToolbarProps> = ({
   onFormatBlock,
   onFormatInline,
-  onInsertTable,
+  onInsertCustomTable,
   onInsertPageBreak,
   onInsertDivider,
   fontFamily,
@@ -47,11 +52,16 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   onChangeFontSize,
   onUndo,
   onRedo,
+  onOpenSpellChecker,
+  typoCount,
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showHighlighterPicker, setShowHighlighterPicker] = useState(false);
+  const [showTablePicker, setShowTablePicker] = useState(false);
+  const [tableRows, setTableRows] = useState(3);
+  const [tableCols, setTableCols] = useState(3);
 
-  // Prevent button clicks from stealing focus from contentEditable!
+  // Prevent button clicks from stealing focus from contentEditable
   const preventBlur = (e: React.MouseEvent) => {
     e.preventDefault();
   };
@@ -71,6 +81,12 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
     { label: 'Pink', value: '#fbcfe8' },
     { label: 'None', value: 'transparent' },
   ];
+
+  const handleCreateChosenTable = (rows: number, cols: number) => {
+    const html = createTableHtml(rows, cols, true);
+    onInsertCustomTable(html);
+    setShowTablePicker(false);
+  };
 
   return (
     <div className="bg-white border-b border-slate-200 px-2 sm:px-4 py-1.5 flex items-center overflow-x-auto no-scrollbar space-x-1 sm:space-x-2 shadow-2xs select-none shrink-0 text-slate-700 text-xs z-20">
@@ -126,7 +142,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
         </select>
       </div>
 
-      {/* 3. Text Styles / Hierarchy */}
+      {/* 3. Text Styles / Paragraph Hierarchy */}
       <div className="flex items-center space-x-0.5 pr-1.5 border-r border-slate-200 shrink-0">
         <button
           id="btn-format-normal"
@@ -142,7 +158,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           onMouseDown={preventBlur}
           onClick={() => onFormatBlock('<h1>')}
           className="px-2 py-1 rounded hover:bg-slate-100 text-xs font-bold text-slate-900 transition-colors"
-          title="Title"
+          title="Heading 1"
         >
           Title
         </button>
@@ -151,7 +167,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           onMouseDown={preventBlur}
           onClick={() => onFormatBlock('<h2>')}
           className="p-1.5 rounded hover:bg-slate-100 text-slate-700 transition-colors"
-          title="Heading 1"
+          title="Heading 2"
         >
           <Heading1 className="w-3.5 h-3.5" />
         </button>
@@ -160,7 +176,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           onMouseDown={preventBlur}
           onClick={() => onFormatBlock('<h3>')}
           className="p-1.5 rounded hover:bg-slate-100 text-slate-700 transition-colors"
-          title="Heading 2"
+          title="Heading 3"
         >
           <Heading2 className="w-3.5 h-3.5" />
         </button>
@@ -216,6 +232,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
             onClick={() => {
               setShowColorPicker(!showColorPicker);
               setShowHighlighterPicker(false);
+              setShowTablePicker(false);
             }}
             className="p-1.5 rounded hover:bg-slate-100 text-slate-700 transition-colors flex items-center space-x-0.5"
             title="Text Color"
@@ -253,6 +270,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
             onClick={() => {
               setShowHighlighterPicker(!showHighlighterPicker);
               setShowColorPicker(false);
+              setShowTablePicker(false);
             }}
             className="p-1.5 rounded hover:bg-slate-100 text-slate-700 transition-colors flex items-center space-x-0.5"
             title="Highlight Text"
@@ -335,19 +353,101 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
         </button>
       </div>
 
-      {/* 7. Inserts: Table, Line, and Page Break */}
-      <div className="flex items-center space-x-1 shrink-0">
+      {/* 7. Editable Table with Custom Row/Column Picker */}
+      <div className="relative shrink-0 pr-1.5 border-r border-slate-200">
         <button
           id="btn-insert-table"
           onMouseDown={preventBlur}
-          onClick={onInsertTable}
+          onClick={() => {
+            setShowTablePicker(!showTablePicker);
+            setShowColorPicker(false);
+            setShowHighlighterPicker(false);
+          }}
           className="flex items-center space-x-1 px-2 py-1 rounded hover:bg-slate-100 text-slate-700 transition-colors font-medium"
           title="Insert Editable Table"
         >
           <TableIcon className="w-3.5 h-3.5 text-blue-600" />
-          <span className="hidden sm:inline">Table</span>
+          <span>Table</span>
+          <ChevronDown className="w-3 h-3 text-slate-400" />
         </button>
 
+        {showTablePicker && (
+          <div
+            className="absolute left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl p-3 z-50 w-56 text-slate-800"
+            onMouseLeave={() => setShowTablePicker(false)}
+          >
+            <div className="text-xs font-bold text-slate-700 mb-2">Insert Table</div>
+            
+            {/* Quick Presets */}
+            <div className="grid grid-cols-2 gap-1.5 mb-3">
+              <button
+                onMouseDown={preventBlur}
+                onClick={() => handleCreateChosenTable(2, 2)}
+                className="px-2 py-1 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[11px] text-center font-medium transition-colors"
+              >
+                2 × 2 Table
+              </button>
+              <button
+                onMouseDown={preventBlur}
+                onClick={() => handleCreateChosenTable(3, 3)}
+                className="px-2 py-1 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[11px] text-center font-medium transition-colors"
+              >
+                3 × 3 Table
+              </button>
+              <button
+                onMouseDown={preventBlur}
+                onClick={() => handleCreateChosenTable(4, 3)}
+                className="px-2 py-1 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[11px] text-center font-medium transition-colors"
+              >
+                4 × 3 Table
+              </button>
+              <button
+                onMouseDown={preventBlur}
+                onClick={() => handleCreateChosenTable(5, 4)}
+                className="px-2 py-1 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 rounded text-[11px] text-center font-medium transition-colors"
+              >
+                5 × 4 Table
+              </button>
+            </div>
+
+            {/* Custom Rows/Cols Input */}
+            <div className="border-t border-slate-100 pt-2 space-y-2">
+              <div className="flex items-center justify-between text-[11px]">
+                <span>Rows:</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="12"
+                  value={tableRows}
+                  onChange={(e) => setTableRows(Math.max(1, Number(e.target.value)))}
+                  className="w-14 px-1.5 py-0.5 border border-slate-200 rounded text-center text-xs"
+                />
+              </div>
+              <div className="flex items-center justify-between text-[11px]">
+                <span>Cols:</span>
+                <input
+                  type="number"
+                  min="1"
+                  max="8"
+                  value={tableCols}
+                  onChange={(e) => setTableCols(Math.max(1, Number(e.target.value)))}
+                  className="w-14 px-1.5 py-0.5 border border-slate-200 rounded text-center text-xs"
+                />
+              </div>
+              <button
+                onMouseDown={preventBlur}
+                onClick={() => handleCreateChosenTable(tableRows, tableCols)}
+                className="w-full mt-1 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold shadow-xs transition-colors"
+              >
+                Create {tableRows} × {tableCols} Table
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 8. Inserts: Line & Page Break */}
+      <div className="flex items-center space-x-1 pr-1.5 border-r border-slate-200 shrink-0">
         <button
           id="btn-insert-divider"
           onMouseDown={preventBlur}
@@ -359,7 +459,6 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           <span className="hidden sm:inline">Line</span>
         </button>
 
-        {/* The Page Break Button */}
         <button
           id="btn-insert-pagebreak"
           onMouseDown={preventBlur}
@@ -369,6 +468,29 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
         >
           <SeparatorHorizontal className="w-3.5 h-3.5 text-blue-600" />
           <span>Page Break</span>
+        </button>
+      </div>
+
+      {/* 9. Auto Spell & Grammar Checker */}
+      <div className="flex items-center shrink-0">
+        <button
+          id="btn-auto-spell-checker"
+          onMouseDown={preventBlur}
+          onClick={onOpenSpellChecker}
+          className={`flex items-center space-x-1.5 px-2.5 py-1 rounded transition-all font-semibold ${
+            typoCount > 0
+              ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 shadow-2xs'
+              : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+          }`}
+          title="Auto Spell & Grammar Checker"
+        >
+          <Sparkles className={`w-3.5 h-3.5 ${typoCount > 0 ? 'text-amber-600' : 'text-blue-600'}`} />
+          <span>Spell Check</span>
+          {typoCount > 0 && (
+            <span className="bg-amber-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+              {typoCount}
+            </span>
+          )}
         </button>
       </div>
     </div>

@@ -1,7 +1,19 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { DocumentModel } from '../../types/document';
 import { paginateContent } from '../../utils/pagination';
 import { saveEditorSelection } from '../../utils/editorUtils';
+import {
+  ActiveTableContext,
+  getActiveTableContext,
+  insertRowAbove,
+  insertRowBelow,
+  deleteCurrentRow,
+  insertColumnLeft,
+  insertColumnRight,
+  deleteCurrentColumn,
+  deleteTable,
+} from '../../utils/tableUtils';
+import { TableControlsBar } from './TableControlsBar';
 
 interface WordEditorProps {
   doc: DocumentModel;
@@ -17,6 +29,17 @@ export const WordEditor: React.FC<WordEditorProps> = ({
 }) => {
   const pagination = paginateContent(doc.content, doc.pageSetup);
   const lastLoadedDocIdRef = useRef<string | null>(null);
+
+  // Active table context state
+  const [tableContext, setTableContext] = useState<ActiveTableContext>({
+    table: null,
+    row: null,
+    cell: null,
+    rowIndex: -1,
+    colIndex: -1,
+    totalRows: 0,
+    totalCols: 0,
+  });
 
   // Initialize content when doc.id changes or if the editor element is freshly mounted
   useEffect(() => {
@@ -34,17 +57,83 @@ export const WordEditor: React.FC<WordEditorProps> = ({
       const html = editorRef.current.innerHTML;
       saveEditorSelection();
       onChangeContent(html);
+      // Update table context if cursor is in table
+      const ctx = getActiveTableContext(editorRef.current);
+      setTableContext(ctx);
     }
   }, [editorRef, onChangeContent]);
 
-  // Track selection whenever the user clicks, types, or moves the cursor
+  // Track selection and active table whenever the user clicks, types, or moves the cursor
   const handleSelectionTracking = () => {
     saveEditorSelection();
+    if (editorRef.current) {
+      const ctx = getActiveTableContext(editorRef.current);
+      setTableContext(ctx);
+    }
+  };
+
+  // Table action callbacks
+  const handleInsertRowAbove = () => {
+    if (tableContext.cell) {
+      insertRowAbove(tableContext.cell);
+      handleInput();
+    }
+  };
+
+  const handleInsertRowBelow = () => {
+    if (tableContext.cell) {
+      insertRowBelow(tableContext.cell);
+      handleInput();
+    }
+  };
+
+  const handleDeleteRow = () => {
+    if (tableContext.cell) {
+      deleteCurrentRow(tableContext.cell);
+      handleInput();
+    }
+  };
+
+  const handleInsertColLeft = () => {
+    if (tableContext.cell) {
+      insertColumnLeft(tableContext.cell);
+      handleInput();
+    }
+  };
+
+  const handleInsertColRight = () => {
+    if (tableContext.cell) {
+      insertColumnRight(tableContext.cell);
+      handleInput();
+    }
+  };
+
+  const handleDeleteCol = () => {
+    if (tableContext.cell) {
+      deleteCurrentColumn(tableContext.cell);
+      handleInput();
+    }
+  };
+
+  const handleDeleteTable = () => {
+    if (tableContext.table) {
+      deleteTable(tableContext.table);
+      handleInput();
+      setTableContext({
+        table: null,
+        row: null,
+        cell: null,
+        rowIndex: -1,
+        colIndex: -1,
+        totalRows: 0,
+        totalCols: 0,
+      });
+    }
   };
 
   // Handle special keys (Tab, Ctrl+Enter)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    // Tab key -> insert 4 spaces or indent cleanly
+    // Tab key -> indent or navigate table cells
     if (e.key === 'Tab') {
       e.preventDefault();
       document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;');
@@ -75,6 +164,26 @@ export const WordEditor: React.FC<WordEditorProps> = ({
 
   return (
     <div className="flex-1 flex flex-col bg-slate-100/90 overflow-hidden relative">
+      {/* Interactive Table Editing Tools - Pops up whenever user selects or clicks inside a table */}
+      {tableContext.table && (
+        <TableControlsBar
+          tableContext={tableContext}
+          onInsertRowAbove={handleInsertRowAbove}
+          onInsertRowBelow={handleInsertRowBelow}
+          onDeleteRow={handleDeleteRow}
+          onInsertColLeft={handleInsertColLeft}
+          onInsertColRight={handleInsertColRight}
+          onDeleteCol={handleDeleteCol}
+          onDeleteTable={handleDeleteTable}
+          onClose={() =>
+            setTableContext((prev) => ({
+              ...prev,
+              table: null,
+            }))
+          }
+        />
+      )}
+
       {/* Scrollable Document Canvas */}
       <div className="flex-1 overflow-y-auto p-2 sm:p-6 lg:p-8 flex justify-center">
         {/* Document Paper Sheet */}
@@ -104,6 +213,8 @@ export const WordEditor: React.FC<WordEditorProps> = ({
               suppressContentEditableWarning={true}
               onInput={handleInput}
               onKeyDown={handleKeyDown}
+              onClick={handleSelectionTracking}
+              onFocus={handleSelectionTracking}
               onKeyUp={handleSelectionTracking}
               onMouseUp={handleSelectionTracking}
               onTouchEnd={handleSelectionTracking}

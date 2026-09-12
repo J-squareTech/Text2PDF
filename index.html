@@ -4,6 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Tex2PDF - All-in-One Document Platform</title>
+    <script>
+      // Intercept and prevent benign Vite dev WebSocket connection rejections from bubbling
+      window.addEventListener('unhandledrejection', function (e) {
+        var reason = e && e.reason;
+        var msg = reason ? (reason.message || String(reason)) : '';
+        if (typeof msg === 'string' && (msg.indexOf('WebSocket') !== -1 || msg.indexOf('websocket') !== -1 || msg.indexOf('closed without opened') !== -1)) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          return true;
+        }
+      }, true);
+
+      window.addEventListener('error', function (e) {
+        var msg = e ? (e.message || '') : '';
+        if (typeof msg === 'string' && (msg.indexOf('WebSocket') !== -1 || msg.indexOf('websocket') !== -1 || msg.indexOf('closed without opened') !== -1)) {
+          e.preventDefault();
+          e.stopPropagation();
+          e.stopImmediatePropagation();
+          return true;
+        }
+      }, true);
+    </script>
     <meta name="description" content="Simple, mobile-friendly Word-like document editor and paginated PDF generator. Write, format, and export documents easily." />
     <meta property="og:title" content="Tex2PDF - All-in-One Document Platform" />
     <meta property="og:description" content="Simple, mobile-friendly Word-like document editor and paginated PDF generator. Write, format, and export documents easily." />

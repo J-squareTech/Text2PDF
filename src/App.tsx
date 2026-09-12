@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Header } from './components/Header';
 import { WordToolbar } from './components/Editor/WordToolbar';
 import { WordEditor } from './components/Editor/WordEditor';
@@ -6,6 +6,7 @@ import { CompactPagePreview } from './components/Editor/CompactPagePreview';
 import { PageSettingsModal } from './components/Editor/PageSettingsModal';
 import { WorkspaceModal } from './components/Workspace/WorkspaceModal';
 import { TemplatesModal } from './components/Workspace/TemplatesModal';
+import { SpellCheckerModal } from './components/Editor/SpellCheckerModal';
 import {
   DocumentModel,
   DocumentTemplate,
@@ -21,6 +22,12 @@ import {
 } from './services/storage';
 import { paginateContent } from './utils/pagination';
 import { restoreEditorSelection } from './utils/editorUtils';
+import {
+  scanForTypos,
+  applyTypoFix,
+  autoCorrectAllTypos,
+  TypoIssue,
+} from './utils/spellChecker';
 
 export default function App() {
   const [documents, setDocuments] = useState<DocumentModel[]>(() => loadDocuments());
@@ -39,7 +46,6 @@ export default function App() {
 
   // View mode: 'editor' (Word write mode), 'preview' (compact paginated PDF preview), or 'split' (side-by-side)
   const [viewMode, setViewMode] = useState<'editor' | 'preview' | 'split'>(() => {
-    // Default to split on desktop (width >= 1024), editor on mobile/tablet
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       return 'editor';
     }
@@ -53,12 +59,20 @@ export default function App() {
   const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [isPageSettingsOpen, setIsPageSettingsOpen] = useState(false);
+  const [isSpellCheckerOpen, setIsSpellCheckerOpen] = useState(false);
+  const [ignoredTypoIds, setIgnoredTypoIds] = useState<Set<string>>(new Set());
   const [isSaving, setIsSaving] = useState(false);
 
   const editorDivRef = useRef<HTMLDivElement | null>(null);
 
   // Calculate current pagination for header & status
   const pagination = paginateContent(currentDoc.content, currentDoc.pageSetup);
+
+  // Scan for typos & grammar issues
+  const detectedTypos = useMemo(() => {
+    const allIssues = scanForTypos(currentDoc.content);
+    return allIssues.filter((iss) => !ignoredTypoIds.has(iss.id));
+  }, [currentDoc.content, ignoredTypoIds]);
 
   // Auto-save effect
   useEffect(() => {
@@ -137,9 +151,8 @@ export default function App() {
     syncFromEditor();
   };
 
-  const handleInsertTable = () => {
+  const handleInsertCustomTable = (tableHtml: string) => {
     restoreEditorSelection(editorDivRef.current);
-    const tableHtml = `<table style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 1px solid #cbd5e1;"><thead><tr style="background-color: #f8fafc;"><th style="border: 1px solid #cbd5e1; padding: 10px; text-align: left; font-weight: 600;">Item</th><th style="border: 1px solid #cbd5e1; padding: 10px; text-align: center; font-weight: 600;">Qty</th><th style="border: 1px solid #cbd5e1; padding: 10px; text-align: right; font-weight: 600;">Price</th></tr></thead><tbody><tr><td style="border: 1px solid #cbd5e1; padding: 10px;">Sample Description</td><td style="border: 1px solid #cbd5e1; padding: 10px; text-align: center;">1</td><td style="border: 1px solid #cbd5e1; padding: 10px; text-align: right;">$50.00</td></tr><tr><td style="border: 1px solid #cbd5e1; padding: 10px;">Second Item</td><td style="border: 1px solid #cbd5e1; padding: 10px; text-align: center;">2</td><td style="border: 1px solid #cbd5e1; padding: 10px; text-align: right;">$100.00</td></tr></tbody></table><p><br/></p>`;
     document.execCommand('insertHTML', false, tableHtml);
     syncFromEditor();
   };
@@ -171,6 +184,28 @@ export default function App() {
     restoreEditorSelection(editorDivRef.current);
     document.execCommand('redo');
     syncFromEditor();
+  };
+
+  // Spell Checker handlers
+  const handleFixSingleTypo = (issue: TypoIssue) => {
+    const fixed = applyTypoFix(currentDoc.content, issue);
+    handleUpdateContent(fixed);
+    if (editorDivRef.current) {
+      editorDivRef.current.innerHTML = fixed;
+    }
+  };
+
+  const handleFixAllTypos = () => {
+    const { updatedHtml } = autoCorrectAllTypos(currentDoc.content, detectedTypos);
+    handleUpdateContent(updatedHtml);
+    if (editorDivRef.current) {
+      editorDivRef.current.innerHTML = updatedHtml;
+    }
+    setIsSpellCheckerOpen(false);
+  };
+
+  const handleIgnoreTypo = (id: string) => {
+    setIgnoredTypoIds((prev) => new Set([...prev, id]));
   };
 
   // New Blank Document
@@ -289,7 +324,7 @@ export default function App() {
         <WordToolbar
           onFormatBlock={handleFormatBlock}
           onFormatInline={handleFormatInline}
-          onInsertTable={handleInsertTable}
+          onInsertCustomTable={handleInsertCustomTable}
           onInsertPageBreak={handleInsertPageBreak}
           onInsertDivider={handleInsertDivider}
           fontFamily={currentDoc.pageSetup.fontFamily}
@@ -298,6 +333,8 @@ export default function App() {
           onChangeFontSize={(s: number) => handleUpdatePageSetup({ fontSize: s })}
           onUndo={handleUndo}
           onRedo={handleRedo}
+          onOpenSpellChecker={() => setIsSpellCheckerOpen(true)}
+          typoCount={detectedTypos.length}
         />
       )}
 
@@ -319,7 +356,7 @@ export default function App() {
           </div>
         )}
 
-        {/* RIGHT / PREVIEW: Full-Sized, Legible, Swappable PDF Preview (Pages 1, 2, 3, 4...) */}
+        {/* RIGHT / PREVIEW: Full-Sized, Legible, Swappable PDF Preview */}
         {(viewMode === 'preview' || viewMode === 'split') && (
           <div
             className={`flex flex-col h-full overflow-hidden ${
@@ -364,6 +401,17 @@ export default function App() {
         onClose={() => setIsPageSettingsOpen(false)}
         pageSetup={currentDoc.pageSetup}
         onUpdatePageSetup={handleUpdatePageSetup}
+      />
+
+      {/* Auto Spell Checker Modal */}
+      <SpellCheckerModal
+        isOpen={isSpellCheckerOpen}
+        onClose={() => setIsSpellCheckerOpen(false)}
+        issues={detectedTypos}
+        onFixSingle={handleFixSingleTypo}
+        onFixAll={handleFixAllTypos}
+        onIgnore={handleIgnoreTypo}
+        onRescan={() => setIgnoredTypoIds(new Set())}
       />
     </div>
   );

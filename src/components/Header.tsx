@@ -12,6 +12,7 @@ import {
   Edit2,
   FileCode,
   Share2,
+  Loader2,
 } from 'lucide-react';
 import { DocumentModel } from '../types/document';
 import {
@@ -52,6 +53,18 @@ export const Header: React.FC<HeaderProps> = ({
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(currentDoc.title);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    try {
+      setIsExporting(true);
+      await exportToDirectPdf(currentDoc);
+    } catch (err) {
+      console.error('Failed to export PDF:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const handleTitleSubmit = () => {
     setIsEditingTitle(false);
@@ -207,11 +220,16 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center rounded-lg bg-blue-600 shadow-xs hover:bg-blue-700 transition-colors">
             <button
               id="btn-main-download-pdf"
-              onClick={() => exportToDirectPdf(currentDoc)}
-              className="px-3 py-1.5 text-white text-xs font-bold flex items-center space-x-1.5"
+              disabled={isExporting}
+              onClick={handleDownloadPdf}
+              className="px-3 py-1.5 text-white text-xs font-bold flex items-center space-x-1.5 disabled:opacity-75"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>PDF</span>
+              {isExporting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+              <span>{isExporting ? 'Creating...' : 'PDF'}</span>
             </button>
 
             <button
@@ -230,11 +248,16 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => setShowExportMenu(false)}
             >
               <button
-                onClick={() => exportToDirectPdf(currentDoc)}
+                disabled={isExporting}
+                onClick={handleDownloadPdf}
                 className="w-full px-3 py-2 text-left hover:bg-blue-50 hover:text-blue-700 flex items-center space-x-2"
               >
-                <Download className="w-3.5 h-3.5 text-blue-600" />
-                <span>Download as PDF</span>
+                {isExporting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
+                ) : (
+                  <Download className="w-3.5 h-3.5 text-blue-600" />
+                )}
+                <span>{isExporting ? 'Generating PDF...' : 'Download as PDF'}</span>
               </button>
 
               <button
