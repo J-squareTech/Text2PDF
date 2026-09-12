@@ -142,7 +142,7 @@ export const WordEditor: React.FC<WordEditorProps> = ({
     }
   };
 
-  // Handle special keys (Tab, Ctrl+Enter, Ctrl+Z, Ctrl+Y)
+  // Handle special keys (Tab, Ctrl+Enter, Ctrl+Z, Ctrl+Y, Ctrl+U, Ctrl+B, Ctrl+I)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     // Undo shortcut (Ctrl+Z or Cmd+Z)
     if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
@@ -158,6 +158,33 @@ export const WordEditor: React.FC<WordEditorProps> = ({
     ) {
       e.preventDefault();
       onRedo?.();
+      return;
+    }
+
+    // Underline shortcut (Ctrl+U or Cmd+U)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'u') {
+      e.preventDefault();
+      document.execCommand('underline', false);
+      saveEditorSelection();
+      handleInput();
+      return;
+    }
+
+    // Bold shortcut (Ctrl+B or Cmd+B)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+      e.preventDefault();
+      document.execCommand('bold', false);
+      saveEditorSelection();
+      handleInput();
+      return;
+    }
+
+    // Italic shortcut (Ctrl+I or Cmd+I)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'i') {
+      e.preventDefault();
+      document.execCommand('italic', false);
+      saveEditorSelection();
+      handleInput();
       return;
     }
 

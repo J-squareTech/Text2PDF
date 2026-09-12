@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Header } from './components/Header';
 import { WordToolbar } from './components/Editor/WordToolbar';
 import { WordEditor } from './components/Editor/WordEditor';
@@ -21,7 +21,14 @@ import {
   setActiveDocId,
 } from './services/storage';
 import { paginateContent } from './utils/pagination';
-import { restoreEditorSelection } from './utils/editorUtils';
+import {
+  restoreEditorSelection,
+  saveEditorSelection,
+  queryActiveFormats,
+  toggleInlineCode,
+  clearAllFormatting,
+  ActiveFormats,
+} from './utils/editorUtils';
 import { DocumentHistory } from './utils/historyManager';
 import {
   scanForTypos,
@@ -67,6 +74,49 @@ export default function App() {
     canUndo: false,
     canRedo: false,
   });
+
+  // Track active inline formatting state for toolbar buttons (Bold, Italic, Underline, etc.)
+  const [activeFormats, setActiveFormats] = useState<ActiveFormats>({
+    bold: false,
+    italic: false,
+    underline: false,
+    strikeThrough: false,
+    subscript: false,
+    superscript: false,
+    code: false,
+    justifyLeft: false,
+    justifyCenter: false,
+    justifyRight: false,
+    justifyFull: false,
+    insertUnorderedList: false,
+    insertOrderedList: false,
+    headingTag: null,
+  });
+
+  const updateActiveFormats = useCallback(() => {
+    if (editorDivRef.current) {
+      const formats = queryActiveFormats(editorDivRef.current);
+      setActiveFormats(formats);
+    }
+  }, []);
+
+  // Listen to selection changes to keep active toolbar format buttons in sync
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      const sel = window.getSelection();
+      if (editorDivRef.current && sel && sel.rangeCount > 0) {
+        if (editorDivRef.current.contains(sel.anchorNode)) {
+          saveEditorSelection();
+          updateActiveFormats();
+        }
+      }
+    };
+
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+    };
+  }, [updateActiveFormats]);
 
   useEffect(() => {
     const unsub = historyManagerRef.current.subscribe((canUndo, canRedo) => {
@@ -163,13 +213,35 @@ export default function App() {
 
   const handleFormatBlock = (tag: string) => {
     restoreEditorSelection(editorDivRef.current);
-    document.execCommand('formatBlock', false, tag);
+    const cleanTag = tag.replace(/[<>]/g, '');
+    try {
+      document.execCommand('formatBlock', false, `<${cleanTag}>`);
+    } catch {
+      document.execCommand('formatBlock', false, cleanTag);
+    }
+    saveEditorSelection();
+    updateActiveFormats();
     syncFromEditor();
   };
 
   const handleFormatInline = (command: string, value?: string) => {
-    restoreEditorSelection(editorDivRef.current);
-    document.execCommand(command, false, value);
+    const editor = editorDivRef.current;
+    restoreEditorSelection(editor);
+
+    if (command === 'toggleCode') {
+      toggleInlineCode(editor);
+    } else if (command === 'clearFormatting' || command === 'removeFormat') {
+      clearAllFormatting(editor);
+    } else if (command === 'hiliteColor') {
+      if (!document.execCommand('hiliteColor', false, value)) {
+        document.execCommand('backColor', false, value);
+      }
+    } else {
+      document.execCommand(command, false, value);
+    }
+
+    saveEditorSelection();
+    updateActiveFormats();
     syncFromEditor();
   };
 
@@ -413,6 +485,7 @@ export default function App() {
           typoCount={detectedTypos.length}
           accentColor={currentDoc.pageSetup.accentColor || '#1e3a8a'}
           onChangeAccentColor={(color: string) => handleUpdatePageSetup({ accentColor: color })}
+          activeFormats={activeFormats}
         />
       )}
 

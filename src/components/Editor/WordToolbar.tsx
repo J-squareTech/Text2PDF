@@ -30,7 +30,12 @@ import {
 } from 'lucide-react';
 import { FontFamily } from '../../types/document';
 import { createTableHtml } from '../../utils/tableUtils';
-import { applyInlineFontSize, applyInlineFontFamily, FONT_FAMILY_DEFINITIONS } from '../../utils/editorUtils';
+import {
+  applyInlineFontSize,
+  applyInlineFontFamily,
+  FONT_FAMILY_DEFINITIONS,
+  ActiveFormats,
+} from '../../utils/editorUtils';
 
 interface WordToolbarProps {
   onFormatBlock: (tag: string) => void;
@@ -50,6 +55,7 @@ interface WordToolbarProps {
   typoCount: number;
   accentColor?: string;
   onChangeAccentColor?: (color: string) => void;
+  activeFormats?: ActiveFormats;
 }
 
 export const WordToolbar: React.FC<WordToolbarProps> = ({
@@ -70,6 +76,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   typoCount,
   accentColor = '#1e3a8a',
   onChangeAccentColor,
+  activeFormats,
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showHighlighterPicker, setShowHighlighterPicker] = useState(false);
@@ -306,19 +313,29 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
             setShowThemePicker(false);
           }}
           className={`flex items-center space-x-1 px-2 py-1 rounded transition-colors font-medium cursor-pointer ${
-            showHeadingPicker
-              ? 'bg-blue-50 text-blue-900 ring-1 ring-blue-300'
+            showHeadingPicker || (activeFormats?.headingTag && activeFormats.headingTag !== 'p')
+              ? 'bg-blue-50 text-blue-900 ring-1 ring-blue-300 font-bold'
               : 'hover:bg-slate-100 text-slate-700'
           }`}
           title="Paragraph and Heading Styles"
         >
-          <span>Styles</span>
+          <span>
+            {activeFormats?.headingTag === 'h1'
+              ? 'Heading 1'
+              : activeFormats?.headingTag === 'h2'
+              ? 'Heading 2'
+              : activeFormats?.headingTag === 'h3'
+              ? 'Heading 3'
+              : activeFormats?.headingTag === 'blockquote'
+              ? 'Quote'
+              : 'Styles'}
+          </span>
           <ChevronDown className="w-3 h-3 text-slate-400" />
         </button>
 
         {showHeadingPicker && (
           <div
-            className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200 rounded-lg shadow-xl p-1.5 z-50 w-44 text-slate-800 ring-1 ring-black/5"
+            className="absolute left-0 top-full mt-1.5 bg-white border border-slate-200 rounded-lg shadow-xl p-1.5 z-50 w-44 max-w-[calc(100vw-24px)] text-slate-800 ring-1 ring-black/5"
             onMouseDown={(e) => e.stopPropagation()}
           >
             <button
@@ -382,7 +399,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-bold"
           onMouseDown={preventBlur}
           onClick={() => onFormatInline('bold')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-800 transition-colors font-bold cursor-pointer"
+          className={`p-1.5 rounded transition-all font-bold cursor-pointer ${
+            activeFormats?.bold
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 font-extrabold shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-800'
+          }`}
           title="Bold (Ctrl+B)"
         >
           <Bold className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -391,7 +412,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-italic"
           onMouseDown={preventBlur}
           onClick={() => onFormatInline('italic')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-800 transition-colors italic cursor-pointer"
+          className={`p-1.5 rounded transition-all italic cursor-pointer ${
+            activeFormats?.italic
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-800'
+          }`}
           title="Italic (Ctrl+I)"
         >
           <Italic className="w-3.5 h-3.5" />
@@ -400,7 +425,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-underline"
           onMouseDown={preventBlur}
           onClick={() => onFormatInline('underline')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-800 transition-colors cursor-pointer"
+          className={`p-1.5 rounded transition-all cursor-pointer ${
+            activeFormats?.underline
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 font-bold underline shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-800'
+          }`}
           title="Underline (Ctrl+U)"
         >
           <Underline className="w-3.5 h-3.5" />
@@ -409,7 +438,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-strike"
           onMouseDown={preventBlur}
           onClick={() => onFormatInline('strikeThrough')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-800 transition-colors cursor-pointer"
+          className={`p-1.5 rounded transition-all cursor-pointer ${
+            activeFormats?.strikeThrough
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 line-through shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-800'
+          }`}
           title="Strikethrough"
         >
           <Strikethrough className="w-3.5 h-3.5" />
@@ -418,7 +451,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-subscript"
           onMouseDown={preventBlur}
           onClick={() => onFormatInline('subscript')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-800 transition-colors cursor-pointer"
+          className={`p-1.5 rounded transition-all cursor-pointer ${
+            activeFormats?.subscript
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-800'
+          }`}
           title="Subscript (X₂)"
         >
           <Subscript className="w-3.5 h-3.5" />
@@ -427,7 +464,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-superscript"
           onMouseDown={preventBlur}
           onClick={() => onFormatInline('superscript')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-800 transition-colors cursor-pointer"
+          className={`p-1.5 rounded transition-all cursor-pointer ${
+            activeFormats?.superscript
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-800'
+          }`}
           title="Superscript (X²)"
         >
           <Superscript className="w-3.5 h-3.5" />
@@ -435,16 +476,20 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
         <button
           id="btn-inline-code"
           onMouseDown={preventBlur}
-          onClick={() => onFormatInline('formatBlock', '<pre>')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-800 transition-colors cursor-pointer"
-          title="Code Block"
+          onClick={() => onFormatInline('toggleCode')}
+          className={`p-1.5 rounded transition-all cursor-pointer ${
+            activeFormats?.code
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 font-mono shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-800'
+          }`}
+          title="Code (Inline or Block)"
         >
-          <Code className="w-3.5 h-3.5 text-slate-600" />
+          <Code className="w-3.5 h-3.5" />
         </button>
         <button
           id="btn-clear-formatting"
           onMouseDown={preventBlur}
-          onClick={() => onFormatInline('removeFormat')}
+          onClick={() => onFormatInline('clearFormatting')}
           className="p-1.5 rounded hover:bg-slate-100 text-slate-800 transition-colors cursor-pointer"
           title="Clear Formatting"
         >
@@ -565,7 +610,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-align-left"
           onMouseDown={preventBlur}
           onClick={() => onFormatInline('justifyLeft')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+          className={`p-1.5 rounded transition-all cursor-pointer ${
+            activeFormats?.justifyLeft
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-700'
+          }`}
           title="Align Left"
         >
           <AlignLeft className="w-3.5 h-3.5" />
@@ -574,7 +623,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-align-center"
           onMouseDown={preventBlur}
           onClick={() => onFormatInline('justifyCenter')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+          className={`p-1.5 rounded transition-all cursor-pointer ${
+            activeFormats?.justifyCenter
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-700'
+          }`}
           title="Align Center"
         >
           <AlignCenter className="w-3.5 h-3.5" />
@@ -583,7 +636,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-align-right"
           onMouseDown={preventBlur}
           onClick={() => onFormatInline('justifyRight')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+          className={`p-1.5 rounded transition-all cursor-pointer ${
+            activeFormats?.justifyRight
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-700'
+          }`}
           title="Align Right"
         >
           <AlignRight className="w-3.5 h-3.5" />
@@ -592,7 +649,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-align-justify"
           onMouseDown={preventBlur}
           onClick={() => onFormatInline('justifyFull')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+          className={`p-1.5 rounded transition-all cursor-pointer ${
+            activeFormats?.justifyFull
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-700'
+          }`}
           title="Justify Full"
         >
           <AlignJustify className="w-3.5 h-3.5" />
@@ -602,7 +663,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-list-bullet"
           onMouseDown={preventBlur}
           onClick={() => onFormatInline('insertUnorderedList')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+          className={`p-1.5 rounded transition-all cursor-pointer ${
+            activeFormats?.insertUnorderedList
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-700'
+          }`}
           title="Bulleted List"
         >
           <List className="w-3.5 h-3.5" />
@@ -611,7 +676,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-list-number"
           onMouseDown={preventBlur}
           onClick={() => onFormatInline('insertOrderedList')}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-700 transition-colors cursor-pointer"
+          className={`p-1.5 rounded transition-all cursor-pointer ${
+            activeFormats?.insertOrderedList
+              ? 'bg-blue-100 text-blue-900 ring-1 ring-blue-400 shadow-2xs'
+              : 'hover:bg-slate-100 text-slate-700'
+          }`}
           title="Numbered List"
         >
           <ListOrdered className="w-3.5 h-3.5" />

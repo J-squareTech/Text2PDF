@@ -20,10 +20,14 @@ import {
   MoreVertical,
   Undo2,
   Redo2,
+  FileDown,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { DocumentModel } from '../types/document';
 import {
   exportToDirectPdf,
+  exportToWord,
+  exportToImage,
   triggerSystemPrint,
   exportToMarkdown,
   exportToHtml,
@@ -100,6 +104,25 @@ export const Header: React.FC<HeaderProps> = ({
       await exportToDirectPdf(currentDoc);
     } catch (err) {
       console.error('Failed to export PDF:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportWord = () => {
+    setShowExportMenu(false);
+    setShowMobileMore(false);
+    exportToWord(currentDoc);
+  };
+
+  const handleExportImage = async () => {
+    try {
+      setIsExporting(true);
+      setShowExportMenu(false);
+      setShowMobileMore(false);
+      await exportToImage(currentDoc);
+    } catch (err) {
+      console.error('Failed to export image:', err);
     } finally {
       setIsExporting(false);
     }
@@ -238,7 +261,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             id="tab-view-split"
             onClick={() => onChangeViewMode('split')}
-            className={`px-2 sm:px-2.5 py-1 rounded-md transition-all flex items-center space-x-1 cursor-pointer ${
+            className={`hidden sm:flex px-2 sm:px-2.5 py-1 rounded-md transition-all items-center space-x-1 cursor-pointer ${
               viewMode === 'split'
                 ? 'bg-white text-blue-700 shadow-2xs font-bold'
                 : 'text-slate-600 hover:text-slate-900'
@@ -314,25 +337,52 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Export Dropdown Menu */}
           {showExportMenu && (
-            <div className="absolute right-0 top-full mt-1.5 w-52 bg-white border border-slate-200 rounded-xl shadow-2xl py-1 text-xs text-slate-700 z-50 animate-in fade-in duration-100">
+            <div className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-2xl py-1 text-xs text-slate-700 z-50 animate-in fade-in duration-100">
               <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 Export Options
               </div>
               <button
+                id="btn-export-pdf-menu"
                 onClick={handleDownloadPdf}
-                className="w-full px-3 py-2 text-left hover:bg-blue-50 text-blue-700 font-semibold flex items-center space-x-2 cursor-pointer"
+                className="w-full px-3 py-2 text-left hover:bg-blue-50 text-blue-700 font-semibold flex items-center space-x-2.5 cursor-pointer transition-colors"
               >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export PDF Document</span>
+                <Download className="w-4 h-4 text-blue-600" />
+                <div>
+                  <div className="font-bold">PDF Document</div>
+                  <div className="text-[10px] text-slate-500 font-normal">Formatted printable PDF</div>
+                </div>
               </button>
               <button
+                id="btn-export-word-menu"
+                onClick={handleExportWord}
+                className="w-full px-3 py-2 text-left hover:bg-indigo-50 text-indigo-900 font-semibold flex items-center space-x-2.5 cursor-pointer transition-colors"
+              >
+                <FileDown className="w-4 h-4 text-indigo-600" />
+                <div>
+                  <div className="font-bold">Word Document (.doc)</div>
+                  <div className="text-[10px] text-slate-500 font-normal">Microsoft Word format</div>
+                </div>
+              </button>
+              <button
+                id="btn-export-image-menu"
+                onClick={handleExportImage}
+                className="w-full px-3 py-2 text-left hover:bg-emerald-50 text-emerald-900 font-semibold flex items-center space-x-2.5 cursor-pointer transition-colors"
+              >
+                <ImageIcon className="w-4 h-4 text-emerald-600" />
+                <div>
+                  <div className="font-bold">Image (.png)</div>
+                  <div className="text-[10px] text-slate-500 font-normal">High-resolution page render</div>
+                </div>
+              </button>
+              <button
+                id="btn-export-print-menu"
                 onClick={() => {
                   setShowExportMenu(false);
                   triggerSystemPrint();
                 }}
-                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center space-x-2 cursor-pointer"
+                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center space-x-2.5 cursor-pointer transition-colors"
               >
-                <Printer className="w-3.5 h-3.5 text-slate-500" />
+                <Printer className="w-4 h-4 text-slate-500" />
                 <span>Print Document</span>
               </button>
               <div className="border-t border-slate-100 my-1" />
@@ -341,9 +391,9 @@ export const Header: React.FC<HeaderProps> = ({
                   setShowExportMenu(false);
                   exportToMarkdown(currentDoc);
                 }}
-                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center space-x-2 cursor-pointer"
+                className="w-full px-3 py-1.5 text-left hover:bg-slate-50 flex items-center space-x-2.5 cursor-pointer text-slate-600"
               >
-                <FileCode className="w-3.5 h-3.5 text-slate-500" />
+                <FileCode className="w-3.5 h-3.5 text-slate-400" />
                 <span>Markdown (.md)</span>
               </button>
               <button
@@ -351,9 +401,9 @@ export const Header: React.FC<HeaderProps> = ({
                   setShowExportMenu(false);
                   exportToHtml(currentDoc);
                 }}
-                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center space-x-2 cursor-pointer"
+                className="w-full px-3 py-1.5 text-left hover:bg-slate-50 flex items-center space-x-2.5 cursor-pointer text-slate-600"
               >
-                <FileText className="w-3.5 h-3.5 text-slate-500" />
+                <FileText className="w-3.5 h-3.5 text-slate-400" />
                 <span>Webpage (.html)</span>
               </button>
               <button
@@ -361,9 +411,9 @@ export const Header: React.FC<HeaderProps> = ({
                   setShowExportMenu(false);
                   exportToTxt(currentDoc);
                 }}
-                className="w-full px-3 py-2 text-left hover:bg-slate-50 flex items-center space-x-2 cursor-pointer"
+                className="w-full px-3 py-1.5 text-left hover:bg-slate-50 flex items-center space-x-2.5 cursor-pointer text-slate-600"
               >
-                <FileText className="w-3.5 h-3.5 text-slate-500" />
+                <FileText className="w-3.5 h-3.5 text-slate-400" />
                 <span>Plain Text (.txt)</span>
               </button>
             </div>
@@ -422,6 +472,21 @@ export const Header: React.FC<HeaderProps> = ({
                   )}
                 </button>
               )}
+              <div className="border-t border-slate-100 my-1" />
+              <button
+                onClick={handleExportWord}
+                className="w-full px-3 py-2 text-left hover:bg-indigo-50 text-indigo-900 font-semibold flex items-center space-x-2 cursor-pointer"
+              >
+                <FileDown className="w-4 h-4 text-indigo-600" />
+                <span>Export Word (.doc)</span>
+              </button>
+              <button
+                onClick={handleExportImage}
+                className="w-full px-3 py-2 text-left hover:bg-emerald-50 text-emerald-900 font-semibold flex items-center space-x-2 cursor-pointer"
+              >
+                <ImageIcon className="w-4 h-4 text-emerald-600" />
+                <span>Export Image (.png)</span>
+              </button>
               <div className="border-t border-slate-100 my-1" />
               <button
                 onClick={() => {

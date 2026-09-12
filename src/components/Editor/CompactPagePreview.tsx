@@ -14,10 +14,17 @@ import {
   Minimize2,
   ArrowLeft,
   Scan,
+  FileDown,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { DocumentModel } from '../../types/document';
 import { paginateContent } from '../../utils/pagination';
-import { exportToDirectPdf, triggerSystemPrint } from '../../services/pdfGenerator';
+import {
+  exportToDirectPdf,
+  triggerSystemPrint,
+  exportToWord,
+  exportToImage,
+} from '../../services/pdfGenerator';
 import { FONT_FAMILY_DEFINITIONS } from '../../utils/editorUtils';
 
 interface CompactPagePreviewProps {
@@ -51,6 +58,21 @@ export const CompactPagePreview: React.FC<CompactPagePreviewProps> = ({
       await exportToDirectPdf(doc);
     } catch (err) {
       console.error('Error exporting PDF:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportWord = () => {
+    exportToWord(doc);
+  };
+
+  const handleExportImage = async () => {
+    try {
+      setIsExporting(true);
+      await exportToImage(doc);
+    } catch (err) {
+      console.error('Error exporting Image:', err);
     } finally {
       setIsExporting(false);
     }
@@ -339,8 +361,8 @@ export const CompactPagePreview: React.FC<CompactPagePreviewProps> = ({
               id="btn-preview-download-pdf"
               disabled={isExporting}
               onClick={handleDownloadPdf}
-              className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded flex items-center space-x-1 shadow-2xs transition-colors disabled:opacity-75 cursor-pointer shrink-0"
-              title="Download PDF File"
+              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded flex items-center space-x-1 shadow-2xs transition-colors disabled:opacity-75 cursor-pointer shrink-0"
+              title="Download PDF Document"
             >
               {isExporting ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -348,6 +370,29 @@ export const CompactPagePreview: React.FC<CompactPagePreviewProps> = ({
                 <Download className="w-3.5 h-3.5" />
               )}
               <span>PDF</span>
+            </button>
+
+            {/* Quick Export Word */}
+            <button
+              id="btn-preview-download-word"
+              onClick={handleExportWord}
+              className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-xs font-semibold rounded flex items-center space-x-1 transition-colors cursor-pointer shrink-0"
+              title="Export as Microsoft Word (.doc)"
+            >
+              <FileDown className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="hidden sm:inline">Word</span>
+            </button>
+
+            {/* Quick Export Image */}
+            <button
+              id="btn-preview-download-image"
+              disabled={isExporting}
+              onClick={handleExportImage}
+              className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold rounded flex items-center space-x-1 transition-colors cursor-pointer shrink-0"
+              title="Export as High-Resolution PNG Image"
+            >
+              <ImageIcon className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="hidden sm:inline">Image</span>
             </button>
 
             {/* Print */}

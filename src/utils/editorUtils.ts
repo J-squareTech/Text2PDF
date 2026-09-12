@@ -110,23 +110,240 @@ export function restoreEditorSelection(fallbackElement?: HTMLElement | null): bo
   const sel = window.getSelection();
   if (!sel) return false;
 
+  // Crucial: ensure the contentEditable element has DOM focus before restoring selection
+  if (
+    fallbackElement &&
+    document.activeElement !== fallbackElement &&
+    !fallbackElement.contains(document.activeElement)
+  ) {
+    fallbackElement.focus();
+  }
+
   if (savedRange) {
-    sel.removeAllRanges();
-    sel.addRange(savedRange);
-    return true;
+    // Verify savedRange is within fallbackElement if provided
+    if (!fallbackElement || fallbackElement.contains(savedRange.commonAncestorContainer)) {
+      sel.removeAllRanges();
+      sel.addRange(savedRange);
+      return true;
+    }
   }
 
   if (fallbackElement) {
-    fallbackElement.focus();
     const range = document.createRange();
     range.selectNodeContents(fallbackElement);
     range.collapse(false); // Place caret at the END, preventing jumping to line 1
     sel.removeAllRanges();
     sel.addRange(range);
+    saveEditorSelection();
     return true;
   }
 
   return false;
+}
+
+export interface ActiveFormats {
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  strikeThrough: boolean;
+  subscript: boolean;
+  superscript: boolean;
+  code: boolean;
+  justifyLeft: boolean;
+  justifyCenter: boolean;
+  justifyRight: boolean;
+  justifyFull: boolean;
+  insertUnorderedList: boolean;
+  insertOrderedList: boolean;
+  headingTag: string | null;
+}
+
+export function queryActiveFormats(editorElement?: HTMLElement | null): ActiveFormats {
+  const defaultFormats: ActiveFormats = {
+    bold: false,
+    italic: false,
+    underline: false,
+    strikeThrough: false,
+    subscript: false,
+    superscript: false,
+    code: false,
+    justifyLeft: false,
+    justifyCenter: false,
+    justifyRight: false,
+    justifyFull: false,
+    insertUnorderedList: false,
+    insertOrderedList: false,
+    headingTag: null,
+  };
+
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return defaultFormats;
+
+  // Check if selection is within editor
+  if (editorElement && !editorElement.contains(sel.anchorNode)) {
+    return defaultFormats;
+  }
+
+  let bold = false;
+  let italic = false;
+  let underline = false;
+  let strikeThrough = false;
+  let subscript = false;
+  let superscript = false;
+  let justifyLeft = false;
+  let justifyCenter = false;
+  let justifyRight = false;
+  let justifyFull = false;
+  let insertUnorderedList = false;
+  let insertOrderedList = false;
+
+  try {
+    bold = document.queryCommandState('bold');
+    italic = document.queryCommandState('italic');
+    underline = document.queryCommandState('underline');
+    strikeThrough = document.queryCommandState('strikeThrough');
+    subscript = document.queryCommandState('subscript');
+    superscript = document.queryCommandState('superscript');
+    justifyLeft = document.queryCommandState('justifyLeft');
+    justifyCenter = document.queryCommandState('justifyCenter');
+    justifyRight = document.queryCommandState('justifyRight');
+    justifyFull = document.queryCommandState('justifyFull');
+    insertUnorderedList = document.queryCommandState('insertUnorderedList');
+    insertOrderedList = document.queryCommandState('insertOrderedList');
+  } catch {
+    // Ignored in non-supporting contexts
+  }
+
+  // DOM node walk for tags: <u>, <s>, <strike>, <code>, <pre>, <h1>, <h2>, <h3>, <blockquote>
+  let headingTag: string | null = null;
+  let code = false;
+  let currNode: Node | null = sel.anchorNode;
+  while (currNode && currNode !== editorElement) {
+    if (currNode.nodeType === Node.ELEMENT_NODE) {
+      const el = currNode as HTMLElement;
+      const tag = el.tagName.toLowerCase();
+      if (!headingTag && ['h1', 'h2', 'h3', 'blockquote', 'p'].includes(tag)) {
+        headingTag = tag;
+      }
+      if (tag === 'code' || tag === 'pre') {
+        code = true;
+      }
+      if (
+        tag === 'u' ||
+        tag === 'ins' ||
+        el.style.textDecoration?.includes('underline') ||
+        el.style.textDecorationLine?.includes('underline')
+      ) {
+        underline = true;
+      }
+      if (
+        tag === 's' ||
+        tag === 'strike' ||
+        tag === 'del' ||
+        el.style.textDecoration?.includes('line-through') ||
+        el.style.textDecorationLine?.includes('line-through')
+      ) {
+        strikeThrough = true;
+      }
+      if (
+        tag === 'b' ||
+        tag === 'strong' ||
+        el.style.fontWeight === 'bold' ||
+        Number(el.style.fontWeight) >= 600
+      ) {
+        bold = true;
+      }
+      if (tag === 'i' || tag === 'em' || el.style.fontStyle === 'italic') {
+        italic = true;
+      }
+      if (tag === 'sub') {
+        subscript = true;
+      }
+      if (tag === 'sup') {
+        superscript = true;
+      }
+    }
+    currNode = currNode.parentNode;
+  }
+
+  return {
+    bold,
+    italic,
+    underline,
+    strikeThrough,
+    subscript,
+    superscript,
+    code,
+    justifyLeft,
+    justifyCenter,
+    justifyRight,
+    justifyFull,
+    insertUnorderedList,
+    insertOrderedList,
+    headingTag,
+  };
+}
+
+/**
+ * Toggle inline <code> wrapping on selected text or insert code block
+ */
+export function toggleInlineCode(fallbackElement?: HTMLElement | null): boolean {
+  restoreEditorSelection(fallbackElement);
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return false;
+
+  const range = sel.getRangeAt(0);
+
+  // Check if cursor is already inside <code>
+  let node: Node | null = sel.anchorNode;
+  while (node && node !== fallbackElement) {
+    if (node.nodeType === Node.ELEMENT_NODE && (node as HTMLElement).tagName.toLowerCase() === 'code') {
+      const parent = node.parentNode;
+      if (parent) {
+        while (node.firstChild) {
+          parent.insertBefore(node.firstChild, node);
+        }
+        parent.removeChild(node);
+        saveEditorSelection();
+        return true;
+      }
+    }
+    node = node.parentNode;
+  }
+
+  if (!sel.isCollapsed) {
+    const codeEl = document.createElement('code');
+    try {
+      codeEl.appendChild(range.extractContents());
+      range.insertNode(codeEl);
+      range.selectNodeContents(codeEl);
+      sel.removeAllRanges();
+      sel.addRange(range);
+      saveEditorSelection();
+      return true;
+    } catch {
+      return document.execCommand('formatBlock', false, '<pre>');
+    }
+  } else {
+    const codeEl = document.createElement('code');
+    codeEl.textContent = 'code';
+    range.insertNode(codeEl);
+    range.selectNodeContents(codeEl);
+    sel.removeAllRanges();
+    sel.addRange(range);
+    saveEditorSelection();
+    return true;
+  }
+}
+
+/**
+ * Clear formatting on active selection
+ */
+export function clearAllFormatting(fallbackElement?: HTMLElement | null): void {
+  restoreEditorSelection(fallbackElement);
+  document.execCommand('removeFormat', false);
+  document.execCommand('unlink', false);
+  saveEditorSelection();
 }
 
 /**

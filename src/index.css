@@ -146,6 +146,76 @@
   user-select: none;
 }
 
+/* Explicit Inline Typography Rules (Prevents CSS Reset from Suppressing Underline / Strike / Sub / Sup) */
+.document-canvas u,
+.document-canvas ins,
+.document-canvas [style*="text-decoration: underline"],
+.document-canvas [style*="text-decoration:underline"],
+.document-canvas [style*="text-decoration-line: underline"] {
+  text-decoration: underline !important;
+  text-decoration-skip-ink: auto;
+}
+
+.document-canvas s,
+.document-canvas strike,
+.document-canvas del,
+.document-canvas [style*="text-decoration: line-through"],
+.document-canvas [style*="text-decoration:line-through"],
+.document-canvas [style*="text-decoration-line: line-through"] {
+  text-decoration: line-through !important;
+}
+
+.document-canvas b,
+.document-canvas strong {
+  font-weight: 700 !important;
+}
+
+.document-canvas i,
+.document-canvas em {
+  font-style: italic !important;
+}
+
+.document-canvas sub {
+  vertical-align: sub !important;
+  font-size: 0.75em !important;
+  line-height: 0;
+}
+
+.document-canvas sup {
+  vertical-align: super !important;
+  font-size: 0.75em !important;
+  line-height: 0;
+}
+
+.document-canvas pre {
+  background-color: #f8fafc;
+  padding: 0.85rem 1rem;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.88em;
+  overflow-x: auto;
+  margin: 0.85rem 0;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+  line-height: 1.5;
+}
+
+.document-canvas code {
+  background-color: #f1f5f9;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 0.88em;
+  border: 1px solid #e2e8f0;
+  color: #0f172a;
+}
+
+.document-canvas mark {
+  background-color: #fef08a;
+  padding: 0.1rem 0.2rem;
+  border-radius: 2px;
+}
+
 /* Print Styles */
 @media print {
   body {
