@@ -6,7 +6,7 @@ export const DOCUMENT_TEMPLATES: DocumentTemplate[] = [
     title: 'Academic Essay & Research Paper',
     category: 'education',
     badge: 'Student Choice',
-    description: 'Standard academic essay format with title block, abstract, structured sections, and references.',
+    description: 'Standard academic essay format with title block, abstract, structured sections, and findings.',
     defaultSettings: {
       fontFamily: 'serif',
       fontSize: 12,
@@ -73,12 +73,8 @@ export const DOCUMENT_TEMPLATES: DocumentTemplate[] = [
   <li>Establishing localized technical vocational training centers for solar equipment maintenance.</li>
 </ul>
 
-<h2>References & Works Cited</h2>
-<ol>
-  <li>African Development Bank. (2025). <em>Decentralized Energy in Sub-Saharan Agriculture</em>. Abidjan: AfDB Publishing.</li>
-  <li>World Bank Group. (2024). <em>State of the Global Mini-Grids Market Report</em>. Washington, D.C.</li>
-  <li>Mbeki, T., &amp; Kamau, N. (2025). "Solar Storage Economics in Rural West Africa." <em>Journal of Development Studies</em>, 41(3), 215-230.</li>
-</ol>`,
+<h2>4. Conclusion & Strategic Impact</h2>
+<p>Decentralized renewable solar micro-grids offer an immediate, economically viable path for bolstering agricultural productivity and regional food security. Coordinated partnerships between local cooperatives and infrastructure funds will ensure sustainable long-term operation.</p>`,
   },
 
   {
@@ -93,7 +89,7 @@ export const DOCUMENT_TEMPLATES: DocumentTemplate[] = [
       lineHeight: 1.45,
       accentColor: '#0f766e',
       headerText: 'Alex Morgan • Curriculum Vitae',
-      footerText: 'References Available Upon Request',
+      footerText: '',
       showPageNumbers: false,
       paperSize: 'a4',
       margin: 'compact',

@@ -1,7 +1,20 @@
 export type PaperSize = 'a4' | 'letter' | 'legal';
 export type Orientation = 'portrait' | 'landscape';
 export type MarginSize = 'compact' | 'normal' | 'relaxed';
-export type FontFamily = 'sans' | 'serif' | 'mono' | 'display';
+export type FontFamily =
+  | 'sans'
+  | 'inter'
+  | 'arial'
+  | 'trebuchet'
+  | 'serif'
+  | 'georgia'
+  | 'garamond'
+  | 'merriweather'
+  | 'mono'
+  | 'courier'
+  | 'display'
+  | 'playfair'
+  | 'script';
 
 export interface PageSetup {
   paperSize: PaperSize;

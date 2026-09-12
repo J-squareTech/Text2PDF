@@ -105,7 +105,7 @@ export const PageSettingsModal: React.FC<PageSettingsModalProps> = ({
             <div className="grid grid-cols-3 gap-2">
               {[
                 { id: 'compact', title: 'Compact', desc: '15mm (More room)' },
-                { id: 'normal', title: 'Normal', desc: '20mm (Standard A4)' },
+                { id: 'normal', title: 'Normal', desc: '20mm (Standard)' },
                 { id: 'relaxed', title: 'Relaxed', desc: '28mm (Editorial)' },
               ].map((m) => (
                 <button

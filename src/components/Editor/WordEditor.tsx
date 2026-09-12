@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { DocumentModel } from '../../types/document';
 import { paginateContent } from '../../utils/pagination';
-import { saveEditorSelection } from '../../utils/editorUtils';
+import { saveEditorSelection, FONT_FAMILY_DEFINITIONS } from '../../utils/editorUtils';
 import {
   ActiveTableContext,
   getActiveTableContext,
@@ -24,6 +24,8 @@ interface WordEditorProps {
   editorRef: React.RefObject<HTMLDivElement | null>;
   onInsertPageBreak?: () => void;
   onOpenPreview?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export const WordEditor: React.FC<WordEditorProps> = ({
@@ -31,6 +33,8 @@ export const WordEditor: React.FC<WordEditorProps> = ({
   onChangeContent,
   editorRef,
   onOpenPreview,
+  onUndo,
+  onRedo,
 }) => {
   const pagination = paginateContent(doc.content, doc.pageSetup);
   const lastLoadedDocIdRef = useRef<string | null>(null);
@@ -138,8 +142,25 @@ export const WordEditor: React.FC<WordEditorProps> = ({
     }
   };
 
-  // Handle special keys (Tab, Ctrl+Enter)
+  // Handle special keys (Tab, Ctrl+Enter, Ctrl+Z, Ctrl+Y)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Undo shortcut (Ctrl+Z or Cmd+Z)
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      onUndo?.();
+      return;
+    }
+
+    // Redo shortcut (Ctrl+Y, Cmd+Y, or Ctrl+Shift+Z, Cmd+Shift+Z)
+    if (
+      (e.ctrlKey || e.metaKey) &&
+      (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))
+    ) {
+      e.preventDefault();
+      onRedo?.();
+      return;
+    }
+
     // Tab key -> indent or navigate table cells
     if (e.key === 'Tab') {
       e.preventDefault();
@@ -170,12 +191,8 @@ export const WordEditor: React.FC<WordEditorProps> = ({
   };
 
   // Font family class
-  const fontStyle = {
-    sans: "font-['Plus_Jakarta_Sans',sans-serif]",
-    serif: "font-['Lora',serif]",
-    mono: "font-['Fira_Code',monospace]",
-    display: "font-['Cinzel',serif]",
-  }[doc.pageSetup.fontFamily] || "font-['Plus_Jakarta_Sans']";
+  const fontStyle =
+    FONT_FAMILY_DEFINITIONS[doc.pageSetup.fontFamily]?.fontClass || "font-['Plus_Jakarta_Sans',sans-serif]";
 
   const accentHex = doc.pageSetup.accentColor || '#1e3a8a';
 
@@ -229,15 +246,17 @@ export const WordEditor: React.FC<WordEditorProps> = ({
             <span className="truncate max-w-[280px]">
               {doc.pageSetup.headerText || 'Header (Set in Page Setup)'}
             </span>
-            <span
-              className="text-[10px] uppercase font-mono px-2 py-0.5 rounded font-semibold"
-              style={{
-                backgroundColor: `${accentHex}15`,
-                color: accentHex,
-              }}
-            >
-              {doc.pageSetup.paperSize.toUpperCase()} Page
-            </span>
+            {doc.pageSetup.showPageNumbers && (
+              <span
+                className="text-[10px] font-mono px-2 py-0.5 rounded font-medium"
+                style={{
+                  backgroundColor: `${accentHex}15`,
+                  color: accentHex,
+                }}
+              >
+                Page 1
+              </span>
+            )}
           </div>
 
           {/* Main Visual WYSIWYG Writing Area */}

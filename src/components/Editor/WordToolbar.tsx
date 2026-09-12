@@ -30,7 +30,7 @@ import {
 } from 'lucide-react';
 import { FontFamily } from '../../types/document';
 import { createTableHtml } from '../../utils/tableUtils';
-import { applyInlineFontSize } from '../../utils/editorUtils';
+import { applyInlineFontSize, applyInlineFontFamily, FONT_FAMILY_DEFINITIONS } from '../../utils/editorUtils';
 
 interface WordToolbarProps {
   onFormatBlock: (tag: string) => void;
@@ -44,6 +44,8 @@ interface WordToolbarProps {
   onChangeFontSize: (size: number) => void;
   onUndo: () => void;
   onRedo: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
   onOpenSpellChecker: () => void;
   typoCount: number;
   accentColor?: string;
@@ -62,6 +64,8 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   onChangeFontSize,
   onUndo,
   onRedo,
+  canUndo,
+  canRedo,
   onOpenSpellChecker,
   typoCount,
   accentColor = '#1e3a8a',
@@ -178,6 +182,11 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
     setShowTablePicker(false);
   };
 
+  const handleFontFamilySelect = (family: FontFamily) => {
+    applyInlineFontFamily(family);
+    onChangeFontFamily(family);
+  };
+
   return (
     <div className="relative z-30 bg-white border-b border-slate-200 px-2 sm:px-3 py-1.5 flex flex-wrap items-center gap-y-1.5 gap-x-1 sm:gap-x-1.5 shadow-2xs select-none shrink-0 text-slate-700 text-xs">
       {/* 1. History (Undo / Redo) */}
@@ -186,7 +195,12 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-toolbar-undo"
           onMouseDown={preventBlur}
           onClick={onUndo}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+          disabled={canUndo === false}
+          className={`p-1.5 rounded transition-colors ${
+            canUndo === false
+              ? 'text-slate-300 cursor-not-allowed opacity-50'
+              : 'hover:bg-slate-100 text-slate-700 cursor-pointer active:scale-95'
+          }`}
           title="Undo (Ctrl+Z)"
         >
           <Undo2 className="w-3.5 h-3.5" />
@@ -195,25 +209,50 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
           id="btn-toolbar-redo"
           onMouseDown={preventBlur}
           onClick={onRedo}
-          className="p-1.5 rounded hover:bg-slate-100 text-slate-600 transition-colors cursor-pointer"
+          disabled={canRedo === false}
+          className={`p-1.5 rounded transition-colors ${
+            canRedo === false
+              ? 'text-slate-300 cursor-not-allowed opacity-50'
+              : 'hover:bg-slate-100 text-slate-700 cursor-pointer active:scale-95'
+          }`}
           title="Redo (Ctrl+Y)"
         >
           <Redo2 className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* 2. Font Family */}
+      {/* 2. Expanded Font Styles: Sans, Serif, Mono, Display, Script */}
       <div className="flex items-center space-x-1 pr-1.5 border-r border-slate-200 shrink-0">
         <select
           id="select-font-family"
           value={fontFamily}
-          onChange={(e) => onChangeFontFamily(e.target.value as FontFamily)}
+          onChange={(e) => handleFontFamilySelect(e.target.value as FontFamily)}
           className="h-7 px-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded text-xs text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+          title="Font Family / Typography Style"
         >
-          <option value="sans">Calibri / Sans</option>
-          <option value="serif">Times / Serif</option>
-          <option value="mono">Courier / Code</option>
-          <option value="display">Georgia / Elegant</option>
+          <optgroup label="Modern Sans-Serif">
+            <option value="sans">Plus Jakarta Sans / Calibri</option>
+            <option value="inter">Inter (Clean Modern)</option>
+            <option value="arial">Arial / Standard</option>
+            <option value="trebuchet">Trebuchet MS</option>
+          </optgroup>
+          <optgroup label="Classic & Book Serif">
+            <option value="serif">Lora / Times New Roman</option>
+            <option value="georgia">Georgia (Editorial)</option>
+            <option value="garamond">EB Garamond (Elegance)</option>
+            <option value="merriweather">Merriweather (Literary)</option>
+          </optgroup>
+          <optgroup label="Monospace & Code">
+            <option value="mono">Fira Code / Consolas</option>
+            <option value="courier">Courier New (Typewriter)</option>
+          </optgroup>
+          <optgroup label="Display & Formal">
+            <option value="display">Cinzel (Diploma & Title)</option>
+            <option value="playfair">Playfair Display (Luxury)</option>
+          </optgroup>
+          <optgroup label="Creative & Handwriting">
+            <option value="script">Caveat (Signature / Notes)</option>
+          </optgroup>
         </select>
       </div>
 

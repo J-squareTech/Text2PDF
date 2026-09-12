@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas-pro';
 import { DocumentModel } from '../types/document';
 import { paginateContent } from '../utils/pagination';
+import { FONT_FAMILY_DEFINITIONS } from '../utils/editorUtils';
 
 /**
  * Generate a downloadable PDF that is 100% IDENTICAL to the visual preview screen.
@@ -38,12 +39,8 @@ export async function exportToDirectPdf(doc: DocumentModel): Promise<void> {
   }[doc.pageSetup.margin] || '32px 48px';
 
   // Font family
-  const fontFamilyStyle = {
-    sans: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    serif: "'Lora', Georgia, Cambria, 'Times New Roman', Times, serif",
-    mono: "'Fira Code', Menlo, Monaco, Consolas, monospace",
-    display: "'Cinzel', Georgia, serif",
-  }[doc.pageSetup.fontFamily] || "'Plus Jakarta Sans', sans-serif";
+  const fontFamilyStyle =
+    FONT_FAMILY_DEFINITIONS[doc.pageSetup.fontFamily]?.css || "'Plus Jakarta Sans', sans-serif";
 
   // Check if preview pages already exist in the DOM
   const existingSheets: HTMLElement[] = [];
@@ -99,13 +96,16 @@ export async function exportToDirectPdf(doc: DocumentModel): Promise<void> {
       headerTitle.textContent = doc.pageSetup.headerText || doc.title;
       headerDiv.appendChild(headerTitle);
 
-      const headerBadge = document.createElement('span');
-      headerBadge.textContent = `${doc.pageSetup.paperSize.toUpperCase()} • PAGE ${pageNum} OF ${totalPages}`;
-      headerBadge.style.fontSize = '10px';
-      headerBadge.style.padding = '2px 8px';
-      headerBadge.style.background = '#f1f5f9';
-      headerBadge.style.borderRadius = '4px';
-      headerDiv.appendChild(headerBadge);
+      if (doc.pageSetup.showPageNumbers) {
+        const headerBadge = document.createElement('span');
+        headerBadge.textContent = `Page ${pageNum} of ${totalPages}`;
+        headerBadge.style.fontSize = '10px';
+        headerBadge.style.padding = '2px 8px';
+        headerBadge.style.background = '#f1f5f9';
+        headerBadge.style.borderRadius = '4px';
+        headerBadge.style.color = '#64748b';
+        headerDiv.appendChild(headerBadge);
+      }
 
       sheet.appendChild(headerDiv);
 
@@ -135,7 +135,7 @@ export async function exportToDirectPdf(doc: DocumentModel): Promise<void> {
       footerDiv.style.fontFamily = "'Plus Jakarta Sans', sans-serif";
 
       const footerText = document.createElement('span');
-      footerText.textContent = doc.pageSetup.footerText || 'Tex2PDF Document';
+      footerText.textContent = doc.pageSetup.footerText || '';
       footerDiv.appendChild(footerText);
 
       if (doc.pageSetup.showPageNumbers) {

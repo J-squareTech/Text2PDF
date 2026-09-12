@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Sparkles, Copy, Check } from 'lucide-react';
 import { DocumentModel } from '../../types/document';
+import { FONT_FAMILY_DEFINITIONS } from '../../utils/editorUtils';
 
 interface DocumentCanvasProps {
   doc: DocumentModel;
@@ -31,17 +32,10 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
 
   // Determine font classes based on setup
   const getFontFamilyClass = () => {
-    switch (doc.pageSetup.fontFamily) {
-      case 'serif':
-        return 'font-serif font-["Lora"]';
-      case 'mono':
-        return 'font-mono font-["Fira_Code"]';
-      case 'display':
-        return 'font-["Cinzel"]';
-      case 'sans':
-      default:
-        return 'font-sans font-["Plus_Jakarta_Sans"]';
-    }
+    return (
+      FONT_FAMILY_DEFINITIONS[doc.pageSetup.fontFamily]?.fontClass ||
+      'font-sans font-["Plus_Jakarta_Sans"]'
+    );
   };
 
   // Determine margin classes in millimeters/pixels for page representation
@@ -158,7 +152,11 @@ export const DocumentCanvas: React.FC<DocumentCanvasProps> = ({
               {doc.pageSetup.headerText ? (
                 <div className="pb-3 mb-6 border-b border-slate-200 flex items-center justify-between text-[11px] text-slate-400 tracking-wider uppercase select-none">
                   <span>{doc.pageSetup.headerText}</span>
-                  <span className="text-[10px] text-slate-300">Tex2PDF Engine</span>
+                  {doc.pageSetup.showPageNumbers && (
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      Page 1 of {estimatedPages}
+                    </span>
+                  )}
                 </div>
               ) : null}
 

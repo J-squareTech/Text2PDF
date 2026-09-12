@@ -82,10 +82,29 @@ export const Toolbar: React.FC<ToolbarProps> = ({
           onChange={(e) => onChangeFontFamily(e.target.value as FontFamily)}
           className="h-8 border border-slate-200 rounded-md bg-slate-50 px-2 text-xs font-medium text-slate-700 hover:bg-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
-          <option value="sans">Modern Sans (Plus Jakarta)</option>
-          <option value="serif">Editorial Serif (Lora)</option>
-          <option value="mono">Code Monospace (Fira)</option>
-          <option value="display">Classical Display (Cinzel)</option>
+          <optgroup label="Modern Sans-Serif">
+            <option value="sans">Plus Jakarta Sans / Calibri</option>
+            <option value="inter">Inter (Clean Modern)</option>
+            <option value="arial">Arial / Standard</option>
+            <option value="trebuchet">Trebuchet MS</option>
+          </optgroup>
+          <optgroup label="Classic & Book Serif">
+            <option value="serif">Lora / Times New Roman</option>
+            <option value="georgia">Georgia (Editorial)</option>
+            <option value="garamond">EB Garamond (Elegance)</option>
+            <option value="merriweather">Merriweather (Literary)</option>
+          </optgroup>
+          <optgroup label="Monospace & Code">
+            <option value="mono">Fira Code / Consolas</option>
+            <option value="courier">Courier New (Typewriter)</option>
+          </optgroup>
+          <optgroup label="Display & Formal">
+            <option value="display">Cinzel (Diploma & Title)</option>
+            <option value="playfair">Playfair Display (Luxury)</option>
+          </optgroup>
+          <optgroup label="Creative & Handwriting">
+            <option value="script">Caveat (Signature / Notes)</option>
+          </optgroup>
         </select>
 
         {/* Font Size */}

@@ -64,7 +64,7 @@ export function getInitialDocuments(): DocumentModel[] {
         lineHeight: 1.45,
         accentColor: '#0f766e',
         headerText: 'Alex Morgan • Curriculum Vitae',
-        footerText: 'References Available Upon Request',
+        footerText: '',
         showPageNumbers: false,
       },
       versions: [],
@@ -104,7 +104,25 @@ export function loadDocuments(): DocumentModel[] {
       saveDocuments(initial);
       return initial;
     }
-    return JSON.parse(raw);
+    const parsed: DocumentModel[] = JSON.parse(raw);
+    // Sanitize any legacy cached documents removing "References Available Upon Request" or old references
+    const cleaned = parsed.map((doc) => {
+      let content = doc.content || '';
+      content = content.replace(/<h2>\s*References\s*&amp;\s*Works Cited\s*<\/h2>[\s\S]*?<\/ol>/gi, '');
+      content = content.replace(/<p[^>]*>\s*References Available Upon Request\s*<\/p>/gi, '');
+      content = content.replace(/References Available Upon Request/gi, '');
+
+      const pageSetup = { ...doc.pageSetup };
+      if (pageSetup.footerText && pageSetup.footerText.includes('References Available Upon Request')) {
+        pageSetup.footerText = '';
+      }
+      return {
+        ...doc,
+        content,
+        pageSetup,
+      };
+    });
+    return cleaned;
   } catch (err) {
     console.error('Failed to load documents from storage:', err);
     return getInitialDocuments();

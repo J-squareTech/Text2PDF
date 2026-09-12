@@ -18,6 +18,7 @@ import {
 import { DocumentModel } from '../../types/document';
 import { paginateContent } from '../../utils/pagination';
 import { exportToDirectPdf, triggerSystemPrint } from '../../services/pdfGenerator';
+import { FONT_FAMILY_DEFINITIONS } from '../../utils/editorUtils';
 
 interface CompactPagePreviewProps {
   doc: DocumentModel;
@@ -89,12 +90,8 @@ export const CompactPagePreview: React.FC<CompactPagePreviewProps> = ({
   }[doc.pageSetup.margin] || 'p-4 sm:p-8';
 
   // Font family class
-  const fontClass = {
-    sans: "font-['Plus_Jakarta_Sans',sans-serif]",
-    serif: "font-['Lora',serif]",
-    mono: "font-['Fira_Code',monospace]",
-    display: "font-['Cinzel',serif]",
-  }[doc.pageSetup.fontFamily] || "font-['Plus_Jakarta_Sans']";
+  const fontClass =
+    FONT_FAMILY_DEFINITIONS[doc.pageSetup.fontFamily]?.fontClass || "font-['Plus_Jakarta_Sans',sans-serif]";
 
   // Renders a single printable page sheet
   const renderPageSheet = (pageContent: string, pageNum: number) => {
@@ -120,9 +117,11 @@ export const CompactPagePreview: React.FC<CompactPagePreviewProps> = ({
           <span className="truncate max-w-[240px] font-medium text-slate-500">
             {doc.pageSetup.headerText || doc.title}
           </span>
-          <span className="uppercase text-[10px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 shrink-0">
-            {doc.pageSetup.paperSize.toUpperCase()} • P.{pageNum}/{totalPages}
-          </span>
+          {doc.pageSetup.showPageNumbers && (
+            <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 shrink-0">
+              Page {pageNum} of {totalPages}
+            </span>
+          )}
         </div>
 
         {/* Rendered WYSIWYG Page Content */}
@@ -145,7 +144,7 @@ export const CompactPagePreview: React.FC<CompactPagePreviewProps> = ({
         {/* Running Bottom Footer */}
         <div className="border-t border-slate-200 pt-2.5 mt-4 text-xs text-slate-400 flex items-center justify-between font-sans shrink-0 select-none">
           <span className="truncate max-w-[220px]">
-            {doc.pageSetup.footerText || 'Tex2PDF Document'}
+            {doc.pageSetup.footerText || ''}
           </span>
           {doc.pageSetup.showPageNumbers && (
             <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 shrink-0">

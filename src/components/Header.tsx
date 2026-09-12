@@ -164,7 +164,7 @@ export const Header: React.FC<HeaderProps> = ({
                   {isSaving ? 'Saving...' : 'Saved to Cloud'}
                 </span>
                 <span>•</span>
-                <span className="uppercase">{currentDoc.pageSetup.paperSize}</span>
+                <span className="capitalize">{currentDoc.pageSetup.orientation}</span>
               </div>
             </div>
           )}

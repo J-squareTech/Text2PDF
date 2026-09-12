@@ -22,6 +22,7 @@ import {
 } from './services/storage';
 import { paginateContent } from './utils/pagination';
 import { restoreEditorSelection } from './utils/editorUtils';
+import { DocumentHistory } from './utils/historyManager';
 import {
   scanForTypos,
   applyTypoFix,
@@ -60,6 +61,27 @@ export default function App() {
 
   const editorDivRef = useRef<HTMLDivElement | null>(null);
 
+  // Robust Undo / Redo History Manager
+  const historyManagerRef = useRef<DocumentHistory>(new DocumentHistory(currentDoc?.content || ''));
+  const [historyState, setHistoryState] = useState<{ canUndo: boolean; canRedo: boolean }>({
+    canUndo: false,
+    canRedo: false,
+  });
+
+  useEffect(() => {
+    const unsub = historyManagerRef.current.subscribe((canUndo, canRedo) => {
+      setHistoryState({ canUndo, canRedo });
+    });
+    return unsub;
+  }, []);
+
+  // When switching documents, reset history for the new document
+  useEffect(() => {
+    if (currentDoc) {
+      historyManagerRef.current.reset(currentDoc.content);
+    }
+  }, [activeDocId]);
+
   // Calculate current pagination for header & status
   const pagination = paginateContent(currentDoc.content, currentDoc.pageSetup);
 
@@ -82,7 +104,10 @@ export default function App() {
   }, [documents, activeDocId]);
 
   // Content mutator
-  const handleUpdateContent = (newContent: string) => {
+  const handleUpdateContent = (newContent: string, isTyping = true) => {
+    if (isTyping) {
+      historyManagerRef.current.recordTyping(newContent);
+    }
     setDocuments((prev) =>
       prev.map((d) =>
         d.id === activeDocId
@@ -130,7 +155,9 @@ export default function App() {
   // WYSIWYG ExecCommand Handlers with Safe Selection Restoration
   const syncFromEditor = () => {
     if (editorDivRef.current) {
-      handleUpdateContent(editorDivRef.current.innerHTML);
+      const html = editorDivRef.current.innerHTML;
+      historyManagerRef.current.snapshot(html);
+      handleUpdateContent(html, false);
     }
   };
 
@@ -186,21 +213,30 @@ export default function App() {
   };
 
   const handleUndo = () => {
-    restoreEditorSelection(editorDivRef.current);
-    document.execCommand('undo');
-    syncFromEditor();
+    const prev = historyManagerRef.current.undo();
+    if (prev !== null) {
+      handleUpdateContent(prev, false);
+      if (editorDivRef.current) {
+        editorDivRef.current.innerHTML = prev;
+      }
+    }
   };
 
   const handleRedo = () => {
-    restoreEditorSelection(editorDivRef.current);
-    document.execCommand('redo');
-    syncFromEditor();
+    const next = historyManagerRef.current.redo();
+    if (next !== null) {
+      handleUpdateContent(next, false);
+      if (editorDivRef.current) {
+        editorDivRef.current.innerHTML = next;
+      }
+    }
   };
 
   // Spell Checker handlers
   const handleFixSingleTypo = (issue: TypoIssue) => {
     const fixed = applyTypoFix(currentDoc.content, issue);
-    handleUpdateContent(fixed);
+    historyManagerRef.current.snapshot(fixed);
+    handleUpdateContent(fixed, false);
     if (editorDivRef.current) {
       editorDivRef.current.innerHTML = fixed;
     }
@@ -208,7 +244,8 @@ export default function App() {
 
   const handleFixAllTypos = () => {
     const { updatedHtml } = autoCorrectAllTypos(currentDoc.content, detectedTypos);
-    handleUpdateContent(updatedHtml);
+    historyManagerRef.current.snapshot(updatedHtml);
+    handleUpdateContent(updatedHtml, false);
     if (editorDivRef.current) {
       editorDivRef.current.innerHTML = updatedHtml;
     }
@@ -370,6 +407,8 @@ export default function App() {
           onChangeFontSize={(s: number) => handleUpdatePageSetup({ fontSize: s })}
           onUndo={handleUndo}
           onRedo={handleRedo}
+          canUndo={historyState.canUndo}
+          canRedo={historyState.canRedo}
           onOpenSpellChecker={() => setIsSpellCheckerOpen(true)}
           typoCount={detectedTypos.length}
           accentColor={currentDoc.pageSetup.accentColor || '#1e3a8a'}
@@ -392,6 +431,8 @@ export default function App() {
               editorRef={editorDivRef}
               onInsertPageBreak={handleInsertPageBreak}
               onOpenPreview={() => setViewMode(window.innerWidth < 768 ? 'preview' : 'split')}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
             />
           </div>
         )}
