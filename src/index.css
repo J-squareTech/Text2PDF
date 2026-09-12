@@ -1,0 +1,172 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply antialiased bg-slate-100 text-slate-900;
+  }
+}
+
+/* Beautiful Rich Document Typography Styles */
+.document-canvas h1 {
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin-top: 1rem;
+  margin-bottom: 0.6rem;
+  color: #0f172a;
+}
+
+.document-canvas h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-top: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #1e293b;
+}
+
+.document-canvas h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 1rem;
+  margin-bottom: 0.4rem;
+  color: #334155;
+}
+
+.document-canvas p {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+  color: #1e293b;
+}
+
+.document-canvas ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.document-canvas ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 0.85rem;
+}
+
+.document-canvas li {
+  margin-bottom: 0.25rem;
+  line-height: 1.5;
+}
+
+.document-canvas div:not(.page-break):not(.tex2pdf-page-break) {
+  margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.document-canvas table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  margin: 1.25rem 0 !important;
+  font-size: 0.95em;
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  border: 1.5px solid #94a3b8 !important;
+  border-radius: 4px;
+  display: table !important;
+}
+
+.document-canvas thead {
+  display: table-header-group !important;
+}
+
+.document-canvas tbody {
+  display: table-row-group !important;
+}
+
+.document-canvas tr {
+  display: table-row !important;
+}
+
+.document-canvas th,
+.document-canvas td {
+  border: 1px solid #cbd5e1 !important;
+  padding: 0.65rem 0.85rem !important;
+  text-align: left;
+  vertical-align: top;
+  display: table-cell !important;
+}
+
+.document-canvas th {
+  background-color: #f1f5f9 !important;
+  font-weight: 700 !important;
+  color: #0f172a !important;
+  border-bottom: 2px solid #94a3b8 !important;
+}
+
+.document-canvas tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+.document-canvas blockquote {
+  border-left: 3px solid #3b82f6;
+  padding-left: 0.85rem;
+  margin: 0.85rem 0;
+  color: #475569;
+  font-style: italic;
+}
+
+.document-canvas hr {
+  border: none;
+  border-top: 1px solid #cbd5e1;
+  margin: 1.2rem 0;
+}
+
+/* Page Break Divider Marker */
+.document-canvas .page-break,
+.document-canvas .tex2pdf-page-break {
+  margin: 1.5rem 0;
+  padding: 0.5rem 1rem;
+  background-color: #eff6ff;
+  border: 1.5px dashed #3b82f6;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1d4ed8;
+  user-select: none;
+}
+
+/* Print Styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  header,
+  nav,
+  .no-print,
+  button {
+    display: none !important;
+  }
+
+  .document-canvas .page-break,
+  .document-canvas .tex2pdf-page-break {
+    display: none !important;
+    page-break-after: always;
+  }
+
+  #printable-document-page {
+    transform: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 15mm !important;
+    page-break-after: always;
+  }
+
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Tex2PDF - All-in-One Document Platform",
+  "description": "Simple, mobile-friendly Word-like document editor and paginated PDF generator. Write, format, and export documents easily.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
