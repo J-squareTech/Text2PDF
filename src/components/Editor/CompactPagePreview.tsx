@@ -90,7 +90,8 @@ export const CompactPagePreview: React.FC<CompactPagePreviewProps> = ({
           transformOrigin: 'top center',
           fontSize: `${doc.pageSetup.fontSize || 11}pt`,
           lineHeight: doc.pageSetup.lineHeight || 1.6,
-        }}
+          '--doc-accent': doc.pageSetup.accentColor || '#1e3a8a',
+        } as React.CSSProperties}
         className={`w-full max-w-2xl bg-white shadow-xl rounded-xs border border-slate-300/90 text-slate-800 flex flex-col justify-between transition-transform duration-100 min-h-[920px] mb-8 select-text ${fontClass} ${marginClasses}`}
       >
         {/* Running Top Header */}

@@ -7,12 +7,14 @@ interface TemplatesModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectTemplate: (template: DocumentTemplate) => void;
+  onApplyToCurrent?: (template: DocumentTemplate) => void;
 }
 
 export const TemplatesModal: React.FC<TemplatesModalProps> = ({
   isOpen,
   onClose,
   onSelectTemplate,
+  onApplyToCurrent,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [previewTemplate, setPreviewTemplate] = useState<DocumentTemplate>(DOCUMENT_TEMPLATES[0]);
@@ -32,18 +34,32 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
     ? DOCUMENT_TEMPLATES
     : DOCUMENT_TEMPLATES.filter((t) => t.category === selectedCategory);
 
+  const handleUseTemplate = (tmpl: DocumentTemplate) => {
+    onSelectTemplate(tmpl);
+    onClose();
+  };
+
+  const handleApplyCurrent = (tmpl: DocumentTemplate) => {
+    if (onApplyToCurrent) {
+      onApplyToCurrent(tmpl);
+    } else {
+      onSelectTemplate(tmpl);
+    }
+    onClose();
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-3 sm:p-5 animate-in fade-in duration-150 select-none">
+      <div className="bg-white border border-slate-200 rounded-xl shadow-2xl w-full max-w-5xl h-[88vh] flex flex-col overflow-hidden">
         {/* Modal Top Bar */}
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-xs">
               <LayoutTemplate className="w-4 h-4" />
             </div>
             <div>
               <h2 className="text-base font-bold text-slate-800">Document Template Library</h2>
-              <p className="text-xs text-slate-500">Kickstart your document with battle-tested professional frameworks</p>
+              <p className="text-xs text-slate-500">Pick any professional template to load into your document</p>
             </div>
           </div>
           <button
@@ -55,7 +71,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
         </div>
 
         {/* Category Pill Filters */}
-        <div className="px-6 py-2.5 border-b border-slate-200 bg-slate-50/80 flex items-center space-x-2 overflow-x-auto text-xs">
+        <div className="px-6 py-2.5 border-b border-slate-200 bg-slate-50/80 flex items-center space-x-2 overflow-x-auto text-xs shrink-0">
           {categories.map((c) => (
             <button
               key={c.id}
@@ -72,9 +88,9 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
         </div>
 
         {/* Main: Templates Grid + Live Preview Pane */}
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* Left Grid */}
-          <div className="w-1/2 overflow-y-auto p-5 space-y-3 border-r border-slate-200 bg-slate-50/20">
+          <div className="w-full md:w-5/12 overflow-y-auto p-4 space-y-3 border-b md:border-b-0 md:border-r border-slate-200 bg-slate-50/30">
             {filtered.map((tmpl) => {
               const isSelected = previewTemplate.id === tmpl.id;
               return (
@@ -99,52 +115,76 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
                   </div>
                   <h3 className="font-bold text-sm text-slate-800 mb-1">{tmpl.title}</h3>
                   <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{tmpl.description}</p>
+                  
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-400 text-[11px]">Click to inspect</span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleUseTemplate(tmpl);
+                      }}
+                      className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-semibold text-xs flex items-center space-x-1 shadow-xs transition-colors"
+                    >
+                      <span>Use Template</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
                 </div>
               );
             })}
           </div>
 
           {/* Right Live Preview Pane */}
-          <div className="w-1/2 overflow-y-auto p-6 flex flex-col justify-between bg-slate-50/40">
+          <div className="w-full md:w-7/12 overflow-y-auto p-5 sm:p-6 flex flex-col justify-between bg-slate-50/50">
             <div className="space-y-3">
               <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                 <div>
                   <h4 className="font-bold text-slate-900 text-sm">{previewTemplate.title}</h4>
                   <p className="text-xs text-slate-500">{previewTemplate.description}</p>
                 </div>
-                <button
-                  id="btn-apply-template"
-                  onClick={() => {
-                    onSelectTemplate(previewTemplate);
-                    onClose();
-                  }}
-                  className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
-                >
-                  <span>Use Template</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button
+                    id="btn-apply-template"
+                    onClick={() => handleUseTemplate(previewTemplate)}
+                    className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
+                  >
+                    <span>Use Template</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
-              {/* Document Sample Preview Box */}
-              <div className="p-4 bg-white border border-slate-200 rounded-lg font-mono text-[11px] leading-relaxed text-slate-700 max-h-[50vh] overflow-y-auto whitespace-pre-wrap shadow-inner">
-                {previewTemplate.content}
+              {/* Formatted Document Sample Preview Box */}
+              <div className="p-5 bg-white border border-slate-300/90 rounded-xl shadow-xs max-h-[48vh] overflow-y-auto document-canvas text-slate-800 text-[13px] leading-relaxed">
+                <div
+                  dangerouslySetInnerHTML={{ __html: previewTemplate.content }}
+                  className="pointer-events-none select-text"
+                />
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+            <div className="pt-3 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500 mt-4">
               <div className="flex items-center space-x-1 text-emerald-700 font-medium">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>Pre-configured typography & margins</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Pre-configured typography, tables & page setup</span>
               </div>
-              <button
-                onClick={() => {
-                  onSelectTemplate(previewTemplate);
-                  onClose();
-                }}
-                className="text-xs text-indigo-600 font-semibold hover:underline"
-              >
-                Create Document Now
-              </button>
+              <div className="flex items-center space-x-3">
+                {onApplyToCurrent && (
+                  <button
+                    onClick={() => handleApplyCurrent(previewTemplate)}
+                    className="text-xs text-slate-600 hover:text-slate-900 font-semibold underline"
+                  >
+                    Apply to current document
+                  </button>
+                )}
+                <button
+                  onClick={() => handleUseTemplate(previewTemplate)}
+                  className="text-xs text-indigo-600 font-bold hover:underline"
+                >
+                  Create New Document &rarr;
+                </button>
+              </div>
             </div>
           </div>
         </div>

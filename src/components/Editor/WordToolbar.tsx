@@ -38,6 +38,8 @@ interface WordToolbarProps {
   onRedo: () => void;
   onOpenSpellChecker: () => void;
   typoCount: number;
+  accentColor?: string;
+  onChangeAccentColor?: (color: string) => void;
 }
 
 export const WordToolbar: React.FC<WordToolbarProps> = ({
@@ -54,10 +56,13 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   onRedo,
   onOpenSpellChecker,
   typoCount,
+  accentColor = '#1e3a8a',
+  onChangeAccentColor,
 }) => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showHighlighterPicker, setShowHighlighterPicker] = useState(false);
   const [showTablePicker, setShowTablePicker] = useState(false);
+  const [showThemePicker, setShowThemePicker] = useState(false);
   const [tableRows, setTableRows] = useState(3);
   const [tableCols, setTableCols] = useState(3);
 
@@ -74,6 +79,15 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
     { label: 'Purple', value: '#6d28d9' },
   ];
 
+  const themeAccents = [
+    { label: 'Navy Blue', value: '#1e3a8a' },
+    { label: 'Crimson Red', value: '#b91c1c' },
+    { label: 'Emerald Green', value: '#047857' },
+    { label: 'Royal Purple', value: '#6d28d9' },
+    { label: 'Amber Gold', value: '#d97706' },
+    { label: 'Slate Charcoal', value: '#334155' },
+  ];
+
   const highlighters = [
     { label: 'Yellow', value: '#fef08a' },
     { label: 'Green', value: '#bbf7d0' },
@@ -83,7 +97,7 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
   ];
 
   const handleCreateChosenTable = (rows: number, cols: number) => {
-    const html = createTableHtml(rows, cols, true);
+    const html = createTableHtml(rows, cols, true, accentColor);
     onInsertCustomTable(html);
     setShowTablePicker(false);
   };
@@ -471,7 +485,64 @@ export const WordToolbar: React.FC<WordToolbarProps> = ({
         </button>
       </div>
 
-      {/* 9. Auto Spell & Grammar Checker */}
+      {/* 9. Document Theme Color Quick Switcher */}
+      {onChangeAccentColor && (
+        <div className="relative shrink-0 pr-1.5 border-r border-slate-200">
+          <button
+            id="btn-toolbar-theme-toggle"
+            onMouseDown={preventBlur}
+            onClick={() => {
+              setShowThemePicker(!showThemePicker);
+              setShowColorPicker(false);
+              setShowHighlighterPicker(false);
+              setShowTablePicker(false);
+            }}
+            className="flex items-center space-x-1.5 px-2 py-1 rounded hover:bg-slate-100 text-slate-700 transition-colors font-medium"
+            title="Document Accent Theme"
+          >
+            <span
+              className="w-3.5 h-3.5 rounded-full border border-slate-300 shadow-2xs shrink-0"
+              style={{ backgroundColor: accentColor }}
+            />
+            <span className="hidden sm:inline">Theme</span>
+            <ChevronDown className="w-3 h-3 text-slate-400" />
+          </button>
+
+          {showThemePicker && (
+            <div
+              className="absolute left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-xl p-2.5 z-50 w-48 text-slate-800"
+              onMouseLeave={() => setShowThemePicker(false)}
+            >
+              <div className="text-[11px] font-bold text-slate-700 mb-1.5">Document Theme</div>
+              <div className="space-y-1">
+                {themeAccents.map((item) => (
+                  <button
+                    key={item.value}
+                    onMouseDown={preventBlur}
+                    onClick={() => {
+                      onChangeAccentColor(item.value);
+                      setShowThemePicker(false);
+                    }}
+                    className={`w-full flex items-center space-x-2 px-2 py-1.5 rounded text-xs transition-colors ${
+                      accentColor.toLowerCase() === item.value.toLowerCase()
+                        ? 'bg-slate-100 font-bold text-slate-900'
+                        : 'hover:bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    <span
+                      className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0"
+                      style={{ backgroundColor: item.value }}
+                    />
+                    <span className="truncate">{item.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 10. Auto Spell & Grammar Checker */}
       <div className="flex items-center shrink-0">
         <button
           id="btn-auto-spell-checker"

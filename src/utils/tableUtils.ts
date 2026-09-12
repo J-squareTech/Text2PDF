@@ -61,18 +61,82 @@ export function getActiveTableContext(editorEl: HTMLElement | null): ActiveTable
 }
 
 /**
+ * Place the browser's cursor inside a table cell and focus it
+ */
+export function focusCell(cell: HTMLTableCellElement): void {
+  try {
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.selectNodeContents(cell);
+    range.collapse(false); // place caret at end of cell content
+    selection.removeAllRanges();
+    selection.addRange(range);
+    cell.focus();
+  } catch {
+    cell.focus();
+  }
+}
+
+/**
+ * Handle Tab and Shift+Tab key navigation inside tables like Microsoft Word / Google Docs
+ * - Tab: moves to next cell; if in last cell of table, automatically adds a new row!
+ * - Shift+Tab: moves to previous cell
+ */
+export function handleTableTabNavigation(cell: HTMLTableCellElement, shiftKey: boolean): boolean {
+  const table = cell.closest('table');
+  if (!table) return false;
+
+  const allCells: HTMLTableCellElement[] = [];
+  for (let r = 0; r < table.rows.length; r++) {
+    for (let c = 0; c < table.rows[r].cells.length; c++) {
+      allCells.push(table.rows[r].cells[c]);
+    }
+  }
+
+  const currentIndex = allCells.indexOf(cell);
+  if (currentIndex === -1) return false;
+
+  if (shiftKey) {
+    if (currentIndex > 0) {
+      focusCell(allCells[currentIndex - 1]);
+      return true;
+    }
+  } else {
+    if (currentIndex < allCells.length - 1) {
+      focusCell(allCells[currentIndex + 1]);
+      return true;
+    } else {
+      // In last cell of table: automatically append new row below and focus first cell
+      insertRowBelow(cell);
+      const lastRow = table.rows[table.rows.length - 1];
+      if (lastRow && lastRow.cells[0]) {
+        focusCell(lastRow.cells[0]);
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
  * Generate standard clean table HTML with specified rows & cols
  */
-export function createTableHtml(rows: number = 3, cols: number = 3, withHeader: boolean = true): string {
-  const rCount = Math.max(1, Math.min(rows, 12));
-  const cCount = Math.max(1, Math.min(cols, 8));
+export function createTableHtml(
+  rows: number = 3,
+  cols: number = 3,
+  withHeader: boolean = true,
+  accentColor: string = '#1e3a8a'
+): string {
+  const rCount = Math.max(1, Math.min(rows, 16));
+  const cCount = Math.max(1, Math.min(cols, 10));
 
   let html = `<table style="width: 100%; border-collapse: collapse; margin: 16px 0; border: 1.5px solid #94a3b8; font-size: 0.95em;">`;
 
   if (withHeader) {
     html += `<thead><tr style="background-color: #f1f5f9;">`;
     for (let c = 0; c < cCount; c++) {
-      html += `<th style="border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; font-weight: 700; color: #0f172a;">Header ${c + 1}</th>`;
+      html += `<th style="border: 1px solid #cbd5e1; padding: 8px 12px; text-align: left; font-weight: 700; color: ${accentColor}; border-bottom: 2px solid ${accentColor};">Column ${c + 1}</th>`;
     }
     html += `</tr></thead>`;
   }
@@ -95,10 +159,10 @@ export function createTableHtml(rows: number = 3, cols: number = 3, withHeader: 
 /**
  * Insert a row above the current cell
  */
-export function insertRowAbove(cell: HTMLTableCellElement): void {
+export function insertRowAbove(cell: HTMLTableCellElement): HTMLTableRowElement | null {
   const row = cell.closest('tr');
   const table = cell.closest('table');
-  if (!row || !table) return;
+  if (!row || !table) return null;
 
   const colCount = Math.max(1, row.cells.length);
   const newRow = document.createElement('tr');
@@ -114,15 +178,16 @@ export function insertRowAbove(cell: HTMLTableCellElement): void {
   }
 
   row.parentNode?.insertBefore(newRow, row);
+  return newRow;
 }
 
 /**
  * Insert a row below the current cell
  */
-export function insertRowBelow(cell: HTMLTableCellElement): void {
+export function insertRowBelow(cell: HTMLTableCellElement): HTMLTableRowElement | null {
   const row = cell.closest('tr');
   const table = cell.closest('table');
-  if (!row || !table) return;
+  if (!row || !table) return null;
 
   const colCount = Math.max(1, row.cells.length);
   const newRow = document.createElement('tr');
@@ -142,6 +207,7 @@ export function insertRowBelow(cell: HTMLTableCellElement): void {
   } else {
     row.parentNode?.appendChild(newRow);
   }
+  return newRow;
 }
 
 /**
@@ -157,7 +223,14 @@ export function deleteCurrentRow(cell: HTMLTableCellElement): void {
     return;
   }
 
+  const nextRow = row.nextElementSibling as HTMLTableRowElement | null;
+  const prevRow = row.previousElementSibling as HTMLTableRowElement | null;
+  const targetRow = nextRow || prevRow;
   row.remove();
+
+  if (targetRow && targetRow.cells[0]) {
+    focusCell(targetRow.cells[0]);
+  }
 }
 
 /**
@@ -179,8 +252,8 @@ export function insertColumnLeft(cell: HTMLTableCellElement): void {
     if (isHeader) {
       newCell.style.backgroundColor = '#f1f5f9';
       newCell.style.fontWeight = '700';
-      newCell.style.color = '#0f172a';
-      newCell.textContent = `Header`;
+      newCell.style.color = '#1e3a8a';
+      newCell.textContent = `Col`;
     } else {
       newCell.style.color = '#334155';
       newCell.innerHTML = '<br/>';
@@ -213,8 +286,8 @@ export function insertColumnRight(cell: HTMLTableCellElement): void {
     if (isHeader) {
       newCell.style.backgroundColor = '#f1f5f9';
       newCell.style.fontWeight = '700';
-      newCell.style.color = '#0f172a';
-      newCell.textContent = `Header`;
+      newCell.style.color = '#1e3a8a';
+      newCell.textContent = `Col`;
     } else {
       newCell.style.color = '#334155';
       newCell.innerHTML = '<br/>';
@@ -257,3 +330,68 @@ export function deleteCurrentColumn(cell: HTMLTableCellElement): void {
 export function deleteTable(table: HTMLTableElement): void {
   table.remove();
 }
+
+/**
+ * Apply design styles / themes to an existing table
+ */
+export function applyTableStyle(
+  table: HTMLTableElement,
+  options: {
+    theme?: 'modern' | 'striped' | 'bordered' | 'minimal' | 'accent';
+    accentColor?: string;
+    padding?: 'compact' | 'normal' | 'relaxed';
+    fullWidth?: boolean;
+  }
+): void {
+  const { theme = 'modern', accentColor = '#1e3a8a', padding = 'normal', fullWidth = true } = options;
+
+  table.style.width = fullWidth ? '100%' : '85%';
+  if (!fullWidth) {
+    table.style.marginLeft = 'auto';
+    table.style.marginRight = 'auto';
+  }
+  table.style.borderCollapse = 'collapse';
+  table.style.margin = '16px 0';
+
+  let padStr = '8px 12px';
+  if (padding === 'compact') padStr = '5px 8px';
+  if (padding === 'relaxed') padStr = '12px 16px';
+
+  if (theme === 'bordered') {
+    table.style.border = '2px solid #64748b';
+  } else if (theme === 'minimal') {
+    table.style.border = 'none';
+  } else {
+    table.style.border = `1.5px solid ${theme === 'accent' ? accentColor : '#94a3b8'}`;
+  }
+
+  for (let r = 0; r < table.rows.length; r++) {
+    const row = table.rows[r];
+    const isHeader = r === 0 && (row.parentElement?.tagName.toLowerCase() === 'thead' || row.querySelector('th') !== null);
+
+    if (isHeader) {
+      row.style.backgroundColor = theme === 'accent' ? accentColor : '#f1f5f9';
+      row.style.color = theme === 'accent' ? '#ffffff' : accentColor;
+    } else {
+      if (theme === 'striped' && r % 2 === 1) {
+        row.style.backgroundColor = '#f8fafc';
+      } else {
+        row.style.backgroundColor = '#ffffff';
+      }
+    }
+
+    for (let c = 0; c < row.cells.length; c++) {
+      const cell = row.cells[c];
+      cell.style.padding = padStr;
+      if (theme === 'minimal' && !isHeader) {
+        cell.style.borderTop = '1px solid #e2e8f0';
+        cell.style.borderBottom = '1px solid #e2e8f0';
+        cell.style.borderLeft = 'none';
+        cell.style.borderRight = 'none';
+      } else {
+        cell.style.border = '1px solid #cbd5e1';
+      }
+    }
+  }
+}
+

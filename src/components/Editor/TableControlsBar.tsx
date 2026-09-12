@@ -20,6 +20,7 @@ interface TableControlsBarProps {
   onInsertColRight: () => void;
   onDeleteCol: () => void;
   onDeleteTable: () => void;
+  onOpenTableProperties?: () => void;
   onClose?: () => void;
 }
 
@@ -32,6 +33,7 @@ export const TableControlsBar: React.FC<TableControlsBarProps> = ({
   onInsertColRight,
   onDeleteCol,
   onDeleteTable,
+  onOpenTableProperties,
   onClose,
 }) => {
   if (!tableContext.table) return null;
@@ -52,6 +54,20 @@ export const TableControlsBar: React.FC<TableControlsBarProps> = ({
             Row {tableContext.rowIndex + 1}/{tableContext.totalRows}, Col {tableContext.colIndex + 1}/{tableContext.totalCols}
           </span>
         </div>
+
+        {/* Design & Properties Button */}
+        {onOpenTableProperties && (
+          <div className="shrink-0 pr-2 border-r border-slate-700">
+            <button
+              onMouseDown={preventBlur}
+              onClick={onOpenTableProperties}
+              className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded flex items-center space-x-1.5 transition-colors font-medium shadow-xs"
+              title="Open Table Editor & Design Presets"
+            >
+              <span>Table Editor & Design</span>
+            </button>
+          </div>
+        )}
 
         {/* Row Operations */}
         <div className="flex items-center space-x-1 pr-2 border-r border-slate-700 shrink-0">

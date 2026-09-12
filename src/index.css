@@ -7,13 +7,17 @@
 }
 
 /* Beautiful Rich Document Typography Styles */
+.document-canvas {
+  --doc-accent: #1e3a8a;
+}
+
 .document-canvas h1 {
   font-size: 1.85rem;
   font-weight: 700;
   line-height: 1.25;
   margin-top: 1rem;
   margin-bottom: 0.6rem;
-  color: #0f172a;
+  color: var(--doc-accent, #0f172a);
 }
 
 .document-canvas h2 {
@@ -22,7 +26,7 @@
   line-height: 1.3;
   margin-top: 1.2rem;
   margin-bottom: 0.5rem;
-  color: #1e293b;
+  color: var(--doc-accent, #1e293b);
 }
 
 .document-canvas h3 {
@@ -31,7 +35,7 @@
   line-height: 1.35;
   margin-top: 1rem;
   margin-bottom: 0.4rem;
-  color: #334155;
+  color: var(--doc-accent, #334155);
 }
 
 .document-canvas p {
@@ -98,8 +102,8 @@
 .document-canvas th {
   background-color: #f1f5f9 !important;
   font-weight: 700 !important;
-  color: #0f172a !important;
-  border-bottom: 2px solid #94a3b8 !important;
+  color: var(--doc-accent, #0f172a) !important;
+  border-bottom: 2px solid var(--doc-accent, #94a3b8) !important;
 }
 
 .document-canvas tbody tr:nth-child(even) {
@@ -107,7 +111,7 @@
 }
 
 .document-canvas blockquote {
-  border-left: 3px solid #3b82f6;
+  border-left: 3.5px solid var(--doc-accent, #3b82f6);
   padding-left: 0.85rem;
   margin: 0.85rem 0;
   color: #475569;
@@ -116,7 +120,7 @@
 
 .document-canvas hr {
   border: none;
-  border-top: 1px solid #cbd5e1;
+  border-top: 1.5px solid var(--doc-accent, #cbd5e1);
   margin: 1.2rem 0;
 }
 

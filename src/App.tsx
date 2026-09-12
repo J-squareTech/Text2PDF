@@ -152,8 +152,24 @@ export default function App() {
   };
 
   const handleInsertCustomTable = (tableHtml: string) => {
-    restoreEditorSelection(editorDivRef.current);
-    document.execCommand('insertHTML', false, tableHtml);
+    const editor = editorDivRef.current;
+    if (!editor) return;
+
+    restoreEditorSelection(editor);
+    const sel = window.getSelection();
+    let inserted = false;
+    if (sel && sel.rangeCount > 0 && editor.contains(sel.anchorNode)) {
+      inserted = document.execCommand('insertHTML', false, tableHtml);
+    }
+
+    if (!inserted) {
+      // Fallback: append safely to editor contents
+      const tempWrapper = document.createElement('div');
+      tempWrapper.innerHTML = tableHtml;
+      while (tempWrapper.firstChild) {
+        editor.appendChild(tempWrapper.firstChild);
+      }
+    }
     syncFromEditor();
   };
 
@@ -240,7 +256,7 @@ export default function App() {
     setCurrentPageIndex(0);
   };
 
-  // Template select
+  // Template select: creates new document and switches view appropriately
   const handleSelectTemplate = (template: DocumentTemplate) => {
     const newId = `doc_${Date.now()}`;
     const newDoc: DocumentModel = {
@@ -271,6 +287,27 @@ export default function App() {
     setDocuments((prev) => [newDoc, ...prev]);
     setActiveDocIdState(newId);
     setCurrentPageIndex(0);
+
+    // If currently in preview mode, switch to split so user can immediately see and edit the template
+    if (viewMode === 'preview') {
+      setViewMode('split');
+    }
+
+    setTimeout(() => {
+      if (editorDivRef.current) {
+        editorDivRef.current.innerHTML = template.content;
+      }
+    }, 20);
+  };
+
+  const handleApplyTemplateToCurrent = (template: DocumentTemplate) => {
+    if (editorDivRef.current) {
+      editorDivRef.current.innerHTML = template.content;
+    }
+    handleUpdateContent(template.content);
+    if (template.defaultSettings) {
+      handleUpdatePageSetup(template.defaultSettings);
+    }
   };
 
   const handleDuplicateDocument = (doc: DocumentModel) => {
@@ -335,6 +372,8 @@ export default function App() {
           onRedo={handleRedo}
           onOpenSpellChecker={() => setIsSpellCheckerOpen(true)}
           typoCount={detectedTypos.length}
+          accentColor={currentDoc.pageSetup.accentColor || '#1e3a8a'}
+          onChangeAccentColor={(color: string) => handleUpdatePageSetup({ accentColor: color })}
         />
       )}
 
@@ -394,6 +433,7 @@ export default function App() {
         isOpen={isTemplatesOpen}
         onClose={() => setIsTemplatesOpen(false)}
         onSelectTemplate={handleSelectTemplate}
+        onApplyToCurrent={handleApplyTemplateToCurrent}
       />
 
       <PageSettingsModal

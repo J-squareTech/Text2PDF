@@ -12,8 +12,10 @@ import {
   insertColumnRight,
   deleteCurrentColumn,
   deleteTable,
+  handleTableTabNavigation,
 } from '../../utils/tableUtils';
 import { TableControlsBar } from './TableControlsBar';
+import { TablePropertiesModal } from './TablePropertiesModal';
 
 interface WordEditorProps {
   doc: DocumentModel;
@@ -40,6 +42,8 @@ export const WordEditor: React.FC<WordEditorProps> = ({
     totalRows: 0,
     totalCols: 0,
   });
+
+  const [isTablePropertiesOpen, setIsTablePropertiesOpen] = useState(false);
 
   // Initialize content when doc.id changes or if the editor element is freshly mounted
   useEffect(() => {
@@ -136,6 +140,14 @@ export const WordEditor: React.FC<WordEditorProps> = ({
     // Tab key -> indent or navigate table cells
     if (e.key === 'Tab') {
       e.preventDefault();
+      // If cursor is inside a table, navigate cells or auto-insert new row
+      if (tableContext.cell) {
+        const handled = handleTableTabNavigation(tableContext.cell, e.shiftKey);
+        if (handled) {
+          handleInput();
+          return;
+        }
+      }
       document.execCommand('insertHTML', false, '&nbsp;&nbsp;&nbsp;&nbsp;');
       handleInput();
       return;
@@ -162,6 +174,8 @@ export const WordEditor: React.FC<WordEditorProps> = ({
     display: "font-['Cinzel',serif]",
   }[doc.pageSetup.fontFamily] || "font-['Plus_Jakarta_Sans']";
 
+  const accentHex = doc.pageSetup.accentColor || '#1e3a8a';
+
   return (
     <div className="flex-1 flex flex-col bg-slate-100/90 overflow-hidden relative">
       {/* Interactive Table Editing Tools - Pops up whenever user selects or clicks inside a table */}
@@ -175,12 +189,24 @@ export const WordEditor: React.FC<WordEditorProps> = ({
           onInsertColRight={handleInsertColRight}
           onDeleteCol={handleDeleteCol}
           onDeleteTable={handleDeleteTable}
+          onOpenTableProperties={() => setIsTablePropertiesOpen(true)}
           onClose={() =>
             setTableContext((prev) => ({
               ...prev,
               table: null,
             }))
           }
+        />
+      )}
+
+      {/* Table Editor & Design Presets Modal */}
+      {tableContext.table && (
+        <TablePropertiesModal
+          isOpen={isTablePropertiesOpen}
+          onClose={() => setIsTablePropertiesOpen(false)}
+          tableContext={tableContext}
+          accentColor={accentHex}
+          onTableUpdated={handleInput}
         />
       )}
 
@@ -192,14 +218,21 @@ export const WordEditor: React.FC<WordEditorProps> = ({
           style={{
             fontSize: `${doc.pageSetup.fontSize || 11}pt`,
             lineHeight: doc.pageSetup.lineHeight || 1.6,
-          }}
+            '--doc-accent': accentHex,
+          } as React.CSSProperties}
         >
           {/* Paper Top Margin Header */}
           <div className="px-5 sm:px-12 pt-6 sm:pt-8 pb-3 border-b border-dashed border-slate-200 flex items-center justify-between text-[11px] text-slate-400 select-none">
             <span className="truncate max-w-[280px]">
               {doc.pageSetup.headerText || 'Header (Set in Page Setup)'}
             </span>
-            <span className="text-[10px] uppercase font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-500">
+            <span
+              className="text-[10px] uppercase font-mono px-2 py-0.5 rounded font-semibold"
+              style={{
+                backgroundColor: `${accentHex}15`,
+                color: accentHex,
+              }}
+            >
               {doc.pageSetup.paperSize.toUpperCase()} Page
             </span>
           </div>
